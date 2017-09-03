@@ -203,7 +203,7 @@ bot.on('message', message => {
 })
     ;
 //
-// Greet users when they come online
+// Greet users when they come online or go offline
 //
 bot.on('presenceUpdate', (oldMember, newMember) => {
     let index;
@@ -211,6 +211,9 @@ bot.on('presenceUpdate', (oldMember, newMember) => {
         if (newMember.presence.status == 'online') {
             index = Math.floor(Math.random() * 3);
             channelGeneral.send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`);
+        }
+        if (newMember.presence.status == 'offline') {
+            channelGeneral.send(`Bye ${newMember.user}. Brb!`);
         }
         console.log(`${newMember.user.username} is now ${newMember.presence.status}`);
     }

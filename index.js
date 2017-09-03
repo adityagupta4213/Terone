@@ -160,8 +160,8 @@ bot.on('message', message => {
         if (command == 'purge') {
             // This command removes all messages from all users in the channel, up to 100.
 
-            // Get the delete count, as an actual number.
-            const deleteCount = parseInt(args[0], 10);
+            // Get the delete count
+            const deleteCount = args[0];
 
             if (!deleteCount || deleteCount < 2 || deleteCount > 100)
                 return message.reply('Please provide a number between 2 and 100 for the number of messages to delete');
@@ -212,7 +212,7 @@ bot.on('presenceUpdate', (oldMember, newMember) => {
             index = Math.floor(Math.random() * 3);
             channelGeneral.send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`);
         }
-        if (newMember.presence.status == 'offline') {
+        else if (newMember.presence.status == 'offline') {
             channelGeneral.send(`Bye ${newMember.user}. Brb!`);
         }
         console.log(`${newMember.user.username} is now ${newMember.presence.status}`);

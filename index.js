@@ -113,10 +113,6 @@ const langs = {
     'zu': 'Zulu'
 };
 
-bot.on('ready', () => {
-    channelGeneral = bot.channels.find('id', '338373230148452353');
-})
-
 bot.on('message', message => {
 
     // Only run if bot is mentioned
@@ -137,21 +133,21 @@ bot.on('message', message => {
         // General greetings //
         //
 
-            // Convert to lowercase in order to deal with all variations of spellings
-            _message = message.content.toLowerCase();
-            const substring = ['hi', 'hey', 'hello', 'sup', 'morning'];
-            // Prevent greetings if any command is given (eg. +translate hello fr would not make the bot say hello along with the result)
-            if (_message.indexOf('+') == -1) {
-                // If the user is a bot itself, don't do anything in order to prevet unwanted loops
-                if (message.author.bot) return;
-                for (let i in substring) {
-                    // Check the whole sentence for greetings instead of just the trigger command
-                    if (_message.indexOf(substring[i]) !== -1) {
-                        let index = Math.floor(Math.random() * 3);
-                        message.reply(greetings[index]);
-                    }
+        // Convert to lowercase in order to deal with all variations of spellings
+        _message = message.content.toLowerCase();
+        const substring = ['hi', 'hey', 'hello', 'sup', 'morning'];
+        // Prevent greetings if any command is given (eg. +translate hello fr would not make the bot say hello along with the result)
+        if (_message.indexOf('+') == -1) {
+            // If the user is a bot itself, don't do anything in order to prevet unwanted loops
+            if (message.author.bot) return;
+            for (let i in substring) {
+                // Check the whole sentence for greetings instead of just the trigger command
+                if (_message.indexOf(substring[i]) !== -1) {
+                    let index = Math.floor(Math.random() * 3);
+                    message.reply(greetings[index]);
                 }
             }
+        }
 
         //
         // Purge //
@@ -178,20 +174,20 @@ bot.on('message', message => {
         if (command == 'translate') {
             let string = [];
             // Transfer the word(s) to another array
-            for (let i=0; i<args.length-1; i++){
+            for (let i = 0; i < args.length - 1; i++) {
                 string[i] = args[i];
             }
 
             string = string.join('');
 
             // Capitalize first letter in order to be able to work with isoConv
-            let lang = args[args.length-1].toLowerCase().split('');
+            let lang = args[args.length - 1].toLowerCase().split('');
             lang[0] = lang[0].toUpperCase();
-            lang = lang.join(''); 
+            lang = lang.join('');
             // Convert given language to appropriate ISO code
             const targetLang = isoConv(lang);
             translate(string, { to: targetLang }).then(result => {
-                if (result.from.text.autoCorrected){
+                if (result.from.text.autoCorrected) {
                     message.channel.send(`The text was corrected to: ${result.from.text.value}`);
                 }
                 message.channel.send(`Translation from ${isoConv(result.from.language.iso)}: ${result.text}`);
@@ -203,20 +199,20 @@ bot.on('message', message => {
 })
     ;
 //
+
+
 // Greet users when they come online or go offline
 //
 bot.on('presenceUpdate', (oldMember, newMember) => {
-    let index;
-    if (oldMember.presence.status !== newMember.presence.status) {
-        if (newMember.presence.status == 'online') {
-            index = Math.floor(Math.random() * 3);
-            channelGeneral.send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`);
-        }
-        else if (newMember.presence.status == 'offline') {
-            channelGeneral.send(`Bye ${newMember.user}. Brb!`);
-        }
+    if (oldMember.presence.status !== newMember.presence.status && newMember.presence.status == 'online') {
+        let index = Math.floor(Math.random() * 3);
+        newMember.guild.channels.find("name", "general").send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`);
         console.log(`${newMember.user.username} is now ${newMember.presence.status}`);
     }
 });
+
+bot.on('guildMemberAdd', function () {
+
+})
 
 bot.login(config.token);

@@ -1,9 +1,11 @@
 const Discord = require('discord.js');
 const translate = require('google-translate-api');
 const isoConv = require('iso-language-converter');
+const badwords = require('badwords/array');
 const config = require('./config.json');
 const bot = new Discord.Client();
 const greetings = ['Hi!', 'Hey there!', 'Hello'];
+const triggerSubstring = ['hi', 'hey', 'hello', 'sup', 'morning'];
 var channelGeneral;
 
 bot.on('message', message => {
@@ -28,16 +30,33 @@ bot.on('message', message => {
 
         // Convert to lowercase in order to deal with all variations of spellings
         _message = message.content.toLowerCase();
-        const substring = ['hi', 'hey', 'hello', 'sup', 'morning'];
         // Prevent greetings if any command is given (eg. +translate hello fr would not make the bot say hello along with the result)
         if (_message.indexOf('+') == -1) {
             // If the user is a bot itself, don't do anything in order to prevet unwanted loops
             if (message.author.bot) return;
-            for (let i in substring) {
+            for (let i in triggerSubstring) {
                 // Check the whole sentence for greetings instead of just the trigger command
-                if (_message.indexOf(substring[i]) !== -1) {
+                if (_message.indexOf(triggerSubstring[i]) !== -1) {
                     let index = Math.floor(Math.random() * 3);
                     message.reply(greetings[index]);
+                }
+            }
+            for (let i in badwords) {
+                if (_message.indexOf(badwords[i]) !== -1) {
+                    message.delete();
+                    message.channel.send({
+                        embed: {
+                            color: 0xf44542,
+                            description: `No profanity ${message.author}!`,
+                            thumbnail: {
+                                url: message.author.avatarURL
+                            },
+                            author: {
+                                name: 'PROFANITY DETECTED'
+                            }
+                        }
+                    });
+                    break;
                 }
             }
         }
@@ -72,7 +91,7 @@ bot.on('message', message => {
                 string[i] = args[i];
             }
 
-            string = string.join('');
+            string = string.join(' ');
 
             // Capitalize first letter in order to be able to work with isoConv
             let lang = args[args.length - 1].toLowerCase().split('');
@@ -89,7 +108,18 @@ bot.on('message', message => {
                 if (result.from.text.autoCorrected) {
                     message.channel.send(`The text was corrected to: ${result.from.text.value}`);
                 }
-                message.channel.send(`Translation from ${isoConv(result.from.language.iso)}: ${result.text}`);
+                message.channel.send({
+                    embed: {
+                        color: 3447003,
+                        description: `**Translation from** __${isoConv(result.from.language.iso)}__:   ${result.text}`,
+                        thumbnail: {
+                            url: 'http://res.cloudinary.com/daemonad/image/upload/v1504465478/Paomedia-Small-N-Flat-Globe_z01tid.png'
+                        },
+                        author: {
+                            name: 'TRANSLATOR'
+                        }
+                    }
+                });
             }).catch(err => {
                 message.channel.send(`An error occured while attempting translate ${err}`);
             });

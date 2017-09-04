@@ -4,7 +4,7 @@ const isoConv = require('iso-language-converter');
 const badwords = require('badwords/array');
 const config = require('./config.json');
 const bot = new Discord.Client();
-const requiredChannels = ['welcome', 'member-log', 'terone-log'];
+const requiredChannels = ['welcome', 'member-log', 'terone-log', 'server-log'];
 const greetings = ['Hi!', 'Hey there!', 'Hello'];
 const triggerSubstring = ['hi', ' hii', 'wassup', 'yo', 'howdy', 'hola', 'heya', 'hey', 'hello', 'sup', 'morning'];
 const green = 0x42f474, red = 0xf44542, blue = 3447003, yellow = 0xffeb3b, grey = 0x747F8D;
@@ -31,9 +31,10 @@ bot.on('message', message => {
     // If the user is a bot itself, don't do anything in order to prevet unwanted loops
     if (message.author.bot) return;
 
-    let _message = message.content.split(' ').join('');
-    if (_message.indexOf('www.') !== -1) {
-        message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here's the corrected message: http://${message.content}`);
+
+    let url = message.content.match(/\bwww\.\S+/gi);
+    if (url) {
+        message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here's the corrected message: http://${url}`);
     }
 
     // Only run if bot is mentioned
@@ -45,7 +46,7 @@ bot.on('message', message => {
         //
 
         // Convert to lowercase in order to deal with all variations of spellings
-        _message = message.content.toLowerCase();
+        let _message = message.content.toLowerCase();
         // Prevent greetings if any command is given (eg. +translate hello fr would not make the bot say hello along with the result)
         if (_message.indexOf('+') == -1) {
             for (let i in triggerSubstring) {
@@ -56,6 +57,10 @@ bot.on('message', message => {
                     break;
                 }
             }
+
+            //
+            // Don't use profanity with mentions
+            //
             for (let i in badwords) {
                 if (_message.indexOf(badwords[i]) !== -1) {
                     message.delete();
@@ -77,10 +82,6 @@ bot.on('message', message => {
 
         }
 
-        //
-        // Don't use profanity with commands or mentions
-        //
-
         if (command == 'purge') purge(message);
 
         if (command == 'translate') translator(message);
@@ -90,6 +91,8 @@ bot.on('message', message => {
         if (command == 'say') say(message);
 
         if (command == 'createchannel') createChannel(message);
+
+        if (command == 'delrole') deleteRole(message);
     }
 });
 
@@ -167,9 +170,13 @@ bot.login(config.token);
 //
 // Separate commands from arguments
 //
-function separateCommands(message) {
+function separateCommands(message, isClean) {
     // Store the content in a temp var
     let _message = message.content;
+    // If a message with cleanContent is to be separated
+    if (isClean) {
+        _message = message;
+    }
     // Split the message, remove the bot mention, rejoin and then remove the + prefix
     _message = _message.split(' ');
     _message.splice(0, 1);
@@ -300,6 +307,9 @@ function say(message) {
     });
 }
 
+//
+// Creates a channel
+//
 function createChannel(message) {
     let channelName = args[0];
     let channelType = args[1];
@@ -309,7 +319,7 @@ function createChannel(message) {
                 message.guild.createChannel(channelName, channelType)
                     .then(() => {
                         let creationTime = message.guild.channels.find('name', channelName).createdAt;
-                        message.guild.channels.find('name', 'terone-log').send({
+                        message.guild.channels.find('name', 'server-log').send({
                             embed: {
                                 color: blue,
                                 description: `Channel **${channelName}** created by ${message.author} at ${creationTime}`,
@@ -323,6 +333,35 @@ function createChannel(message) {
             }
             else message.channel.send('**Please check if channel already exists and if you have entered valid channel type**: `text` or `voice`');
         }
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
+
+//
+// Deletes a given role
+//
+function deleteRole(message) {
+    // Remove @mentions
+    let _message = message.cleanContent;
+    // Separate the commands from cleaed message    
+    separateCommands(_message, true);
+    // Remove the @
+    let roleName = args[0].split('').splice(1).join('');
+    let role = message.guild.roles.find('name', roleName);
+
+    try {
+        role.delete();
+        message.guild.channels.find('name', 'server-log').send({
+            embed: {
+                color: red,
+                description: `Role ${roleName} was deleted by ${message.author}`,
+                author: {
+                    name: 'ROLE DELETED'
+                }
+            }
+        });
     }
     catch (e) {
         console.log(e);

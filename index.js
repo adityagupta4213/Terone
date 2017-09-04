@@ -6,7 +6,7 @@ const config = require('./config.json');
 const bot = new Discord.Client();
 const requiredChannels = ['welcome', 'member-log', 'terone-log'];
 const greetings = ['Hi!', 'Hey there!', 'Hello'];
-const triggerSubstring = ['hi', 'hey', 'hello', 'sup', 'morning'];
+const triggerSubstring = ['hi', ' hii', 'wassup', 'yo', 'howdy', 'hola', 'heya', 'hey', 'hello', 'sup', 'morning'];
 let args, command;
 
 
@@ -24,24 +24,21 @@ bot.on('guildCreate', guild => {
     }
 });
 
-function separateCommands(message) {
-    // Store the content in a temp var
-    let _message = message.content;
-    // Split the message, remove the bot mention, rejoin and then remove the + prefix
-    _message = _message.split(' ');
-    _message.splice(0, 1);
-    args = _message.join(' ').slice(1).trim().split(/ +/g);
-    // Separate the command from the arguments
-    command = args.shift().toLowerCase();
-
-    console.log('command: ', command, 'args: ', args);
-}
 
 bot.on('message', message => {
 
+    // If the user is a bot itself, don't do anything in order to prevet unwanted loops
+    if (message.author.bot) return;
+
+    let _message = message.content.split(' ').join('');
+    console.log(_message);
+    if (_message.indexOf('www.') !== -1) {
+        message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here's the corrected message: http://${message.content}`);
+    }
+
     // Only run if bot is mentioned
     if (message.isMentioned(bot.user)) {
-        separateCommands(message);        
+        separateCommands(message);
 
         //
         // General greetings //
@@ -51,13 +48,12 @@ bot.on('message', message => {
         _message = message.content.toLowerCase();
         // Prevent greetings if any command is given (eg. +translate hello fr would not make the bot say hello along with the result)
         if (_message.indexOf('+') == -1) {
-            // If the user is a bot itself, don't do anything in order to prevet unwanted loops
-            if (message.author.bot) return;
             for (let i in triggerSubstring) {
                 // Check the whole sentence for greetings instead of just the trigger command
                 if (_message.indexOf(triggerSubstring[i]) !== -1) {
-                    let index = Math.floor(Math.random() * 3);
-                    message.reply(greetings[index]);
+                    let index = Math.floor(Math.random() * greetings.length);
+                    message.channel.send(`${greetings[index]} ${message.author}`);
+                    break;
                 }
             }
         }
@@ -90,10 +86,11 @@ bot.on('message', message => {
         if (command == 'translate') translator(message);
 
         if (command == 'kick') kick(message);
-        
+
         if (command == 'say') say(message);
     }
 });
+
 
 //
 // Greet users when they come online or go offline and member-log
@@ -111,7 +108,15 @@ bot.on('presenceUpdate', (oldMember, newMember) => {
             }
         }
         try {
-            newMember.guild.channels.find('name', 'member-log').send(`**${newMember.user.username}** is now ${newMember.presence.status}`);
+            newMember.guild.channels.find('name', 'member-log').send({
+                embed: {
+                    color: 3447003,
+                    description: `**${newMember.user.username}** is now ${newMember.presence.status}`,
+                    thumbnail: {
+                        url: newMember.user.avatarURL
+                    }
+                }
+            });
         }
         catch (e) {
             console.log(e);
@@ -146,6 +151,24 @@ bot.on('guildMemberAdd', member => {
 
 bot.login(config.token);
 
+
+//
+// Separate commands from arguments
+//
+function separateCommands(message) {
+    // Store the content in a temp var
+    let _message = message.content;
+    // Split the message, remove the bot mention, rejoin and then remove the + prefix
+    _message = _message.split(' ');
+    _message.splice(0, 1);
+    args = _message.join(' ').slice(1).trim().split(/ +/g);
+    // Separate the command from the arguments
+    command = args.shift().toLowerCase();
+
+    console.log('command: ', command, 'args: ', args);
+}
+
+
 //
 // Purge //
 //
@@ -169,7 +192,7 @@ function purge(message) {
 // Translator
 //
 function translator(message) {
-    
+
     let string = [];
     // Transfer the word(s) to another array
     for (let i = 0; i < args.length - 1; i++) {

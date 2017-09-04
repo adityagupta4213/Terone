@@ -8,6 +8,12 @@ const greetings = ['Hi!', 'Hey there!', 'Hello'];
 const triggerSubstring = ['hi', 'hey', 'hello', 'sup', 'morning'];
 var channelGeneral;
 
+
+bot.on('ready', () => {
+    bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } });
+});
+
+
 bot.on('message', message => {
 
     // Only run if bot is mentioned
@@ -124,25 +130,73 @@ bot.on('message', message => {
                 message.channel.send(`An error occured while attempting translate ${err}`);
             });
         }
-    }
-})
-    ;
-//
 
+        if (command == 'kick') {
+            let guild = message.guild;
+            try {
+                if (guild.member(message.author).roles.findKey('name', 'mod')) {
+                    let _member = guild.member(args[0]);
+                    console.log(_member);
 
-// Greet users when they come online or go offline
-//
-bot.on('presenceUpdate', (oldMember, newMember) => {
-    if (oldMember.presence.status !== newMember.presence.status && newMember.presence.status == 'online') {
-        let index = Math.floor(Math.random() * 3);
-        // So that each instance sends message to its own server instead of every server
-        newMember.guild.channels.find("name", "general").send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`);
-        console.log(`${newMember.user.username} is now ${newMember.presence.status}`);
+                    /*message.channel.send({
+                        embed: {
+                            color: 3447003,
+                            description: `**${_member.user.username}** has been kicked by moderators`,
+                            thumbnail: {
+                                url: _member.user.avatarURL
+                            },
+                            author: {
+                                name: 'MOD'
+                            }
+                        }
+                    });*/
+                    _member.kick();
+                }
+                else {
+                    message.channel.send(`${message.author} You don't have required permissions for that`);
+                }
+            }
+            catch (e) {
+                console.log(e);
+            }
+        }
     }
 });
 
-bot.on('guildMemberAdd', function () {
+//
+// Greet users when they come online or go offline and member-log
+//
+bot.on('presenceUpdate', (oldMember, newMember) => {
+    if (oldMember.presence.status !== newMember.presence.status) {
+        if (newMember.presence.status == 'online') {
+            let index = Math.floor(Math.random() * 3);
+            // So that each instance sends message to its own server instead of every server
+            try {
+                newMember.guild.channels.find('name', 'general').send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`);
+            }
+            catch (e) {
+                console.log(e);
+            }
+        }
+        try {
+            newMember.guild.channels.find('name', 'member-log').send(`**${newMember.user.username}** is now ${newMember.presence.status}`);
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+});
 
-})
+bot.on('guildMemberAdd', member => {
+    let _member = member;
+    try{
+        console.log(_member.guild.members);
+        //_member.guild.channels.find('name', 'welcome').send(`**Welcome** ${_member.user}! You are the ${_member.guild.memberCount + 1}th member!`);
+    }
+    catch(e){
+        console.log(e);
+    }
+
+});
 
 bot.login(config.token);

@@ -33,8 +33,12 @@ bot.on('message', message => {
 
 
     let url = message.content.match(/\bwww\.\S+/gi);
+    console.log(url);
     if (url) {
-        message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here's the corrected message: http://${url}`);
+        message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here are the corrected ones:`);
+        for (let i in url) {
+            message.channel.send(`http://${url[i]}`);
+        }
     }
 
     // Only run if bot is mentioned
@@ -51,7 +55,7 @@ bot.on('message', message => {
         if (_message.indexOf('+') == -1) {
             for (let i in triggerSubstring) {
                 // Check the whole sentence for greetings instead of just the trigger command
-                if (_message.indexOf(triggerSubstring[i]) !== -1) {
+                if (_message.search(triggerSubstring[i]) !== -1) {
                     let index = Math.floor(Math.random() * greetings.length);
                     message.channel.send(`${greetings[index]} ${message.author}`);
                     break;
@@ -62,7 +66,7 @@ bot.on('message', message => {
             // Don't use profanity with mentions
             //
             for (let i in badwords) {
-                if (_message.indexOf(badwords[i]) !== -1) {
+                if (_message.search(badwords[i]) !== -1) {
                     message.delete();
                     message.channel.send({
                         embed: {
@@ -201,7 +205,7 @@ function purge(message) {
         return message.reply('Please provide a number between 2 and 100 for the number of messages to delete');
 
     // Get messages and delete them.
-    message.channel.fetchMessages({ count: deleteCount })
+    message.channel.fetchMessages({ limit: deleteCount })
         .then(messages => message.channel.bulkDelete(messages))
         .catch(error => message.reply(`Couldn't delete messages because of: ${error}`));
 

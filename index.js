@@ -4,6 +4,7 @@ const isoConv = require('iso-language-converter');
 const badwords = require('badwords/array');
 const config = require('./config.json');
 const bot = new Discord.Client();
+const requiredChannels = ['welcome', 'member-log', 'terone-log'];
 const greetings = ['Hi!', 'Hey there!', 'Hello'];
 const triggerSubstring = ['hi', 'hey', 'hello', 'sup', 'morning'];
 var channelGeneral;
@@ -13,6 +14,18 @@ bot.on('ready', () => {
     bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } });
 });
 
+
+
+//
+// Create required channels
+//
+bot.on('guildCreate', guild => {
+    for (let i in requiredChannels) {
+        if (!guild.channels.exists('name', requiredChannels[i])){
+            guild.createChannel(requiredChannels[i], 'text');         
+        }
+    }
+});
 
 bot.on('message', message => {
 
@@ -190,8 +203,7 @@ bot.on('presenceUpdate', (oldMember, newMember) => {
 bot.on('guildMemberAdd', member => {
     let _member = member;
     try{
-        console.log(_member.guild.members);
-        //_member.guild.channels.find('name', 'welcome').send(`**Welcome** ${_member.user}! You are the ${_member.guild.memberCount + 1}th member!`);
+        _member.guild.channels.find('name', 'welcome').send(`**Welcome** ${_member.user}! You are the ${_member.guild.memberCount + 1}th member!`);
     }
     catch(e){
         console.log(e);

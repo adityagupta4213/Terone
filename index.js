@@ -10,10 +10,13 @@ const triggerSubstring = ['hi', ' hii', 'wassup', 'yo', 'howdy', 'hola', 'heya',
 const green = 0x42f474, red = 0xf44542, blue = 3447003, yellow = 0xffeb3b, grey = 0x747F8D;
 let args, command;
 
-
+//
+// Server count as current game
+//
 bot.on('ready', () => {
     bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } });
 });
+
 //
 // Create required channels
 //
@@ -31,9 +34,11 @@ bot.on('message', message => {
     // If the user is a bot itself, don't do anything in order to prevet unwanted loops
     if (message.author.bot) return;
 
-
+    //
+    // HTTP auto prefixing
+    //
+    // If message has 'www.' 
     let url = message.content.match(/\bwww\.\S+/gi);
-    console.log(url);
     if (url) {
         message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here are the corrected ones:`);
         for (let i in url) {
@@ -43,7 +48,9 @@ bot.on('message', message => {
 
     // Only run if bot is mentioned
     if (message.isMentioned(bot.user)) {
-        separateCommands(message);
+
+        // Separate command from args
+        separateCommand(message);
 
         //
         // General greetings //
@@ -168,13 +175,86 @@ bot.on('guildMemberAdd', member => {
 
 });
 
+//
+// Server join log
+//
+bot.on('guildCreate', guild => {
+    bot.channels.find('name', 'terone-log').send({
+        embed: {
+            color: 3447003,
+            description: `Terone is now a member of **${guild.name}**`,
+            thumbnail: {
+                url: guild.iconURL
+            },
+            author: {
+                name: 'SERVER JOINED'
+            },
+            fields: [
+                {
+                    "name": "Owner",
+                    "value": `${guild.owner}`
+                },
+                {
+                    "name": "Server Region",
+                    "value": `${guild.region}`
+                },
+                {
+                    "name": "Joined at",
+                    "value": `${guild.joinedAt}`
+                },
+                {
+                    "name": "Members",
+                    "value": `${guild.memberCount}`
+                }
+            ]
+        }
+    });
+});
+
+
+//
+// Server left log
+//
+bot.on('guildDelete', guild => {
+    bot.channels.find('name', 'terone-log').send({
+        embed: {
+            color: red,
+            description: `Terone is no longer a member of **${guild.name}**`,
+            thumbnail: {
+                url: guild.iconURL
+            },
+            author: {
+                name: 'SERVER LEFT'
+            },
+            fields: [
+                {
+                    "name": "Owner",
+                    "value": `${guild.owner}`
+                },
+                {
+                    "name": "Server Region",
+                    "value": `${guild.region}`
+                },
+                {
+                    "name": "Joined at",
+                    "value": `${guild.joinedAt}`
+                },
+                {
+                    "name": "Members",
+                    "value": `${guild.memberCount}`
+                }
+            ]
+        }
+    });
+});
+
 bot.login(config.token);
 
 
 //
 // Separate commands from arguments
 //
-function separateCommands(message, isClean) {
+function separateCommand(message, isClean) {
     // Store the content in a temp var
     let _message = message.content;
     // If a message with cleanContent is to be separated
@@ -350,7 +430,7 @@ function deleteRole(message) {
     // Remove @mentions
     let _message = message.cleanContent;
     // Separate the commands from cleaed message    
-    separateCommands(_message, true);
+    separateCommand(_message, true);
     // Remove the @
     let roleName = args[0].split('').splice(1).join('');
     let role = message.guild.roles.find('name', roleName);

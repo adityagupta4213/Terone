@@ -21,8 +21,8 @@ bot.on('ready', () => {
 //
 bot.on('guildCreate', guild => {
     for (let i in requiredChannels) {
-        if (!guild.channels.exists('name', requiredChannels[i])){
-            guild.createChannel(requiredChannels[i], 'text');         
+        if (!guild.channels.exists('name', requiredChannels[i])) {
+            guild.createChannel(requiredChannels[i], 'text');
         }
     }
 });
@@ -144,6 +144,10 @@ bot.on('message', message => {
             });
         }
 
+        //
+        // Kick members
+        // Not yet functional
+        //
         if (command == 'kick') {
             let guild = message.guild;
             try {
@@ -172,6 +176,27 @@ bot.on('message', message => {
             catch (e) {
                 console.log(e);
             }
+        }
+
+        //
+        // Say stuff
+        // Same logic as translator for separating message
+        //
+        if (command == 'say') {
+            let _message= [];
+            for (let i = 0; i < args.length; i++) {
+                _message[i] = args[i];
+            }
+            _message = _message.join(' ');
+            message.channel.send({
+                embed: {
+                    color: 0x42f474,
+                    description: `${_message}`,
+                    thumbnail: {
+                        url: bot.user.avatarURL
+                    }
+                }
+            })
         }
     }
 });
@@ -202,10 +227,21 @@ bot.on('presenceUpdate', (oldMember, newMember) => {
 
 bot.on('guildMemberAdd', member => {
     let _member = member;
-    try{
-        _member.guild.channels.find('name', 'welcome').send(`**Welcome** ${_member.user}! You are the ${_member.guild.memberCount + 1}th member!`);
+    try {
+        _member.guild.channels.find('name', 'welcome').send({
+            embed: {
+                color: 3447003,
+                description: `**Welcome** ${_member.user}! You are the ${_member.guild.memberCount + 1}th member!`,
+                thumbnail: {
+                    url: bot.user.avatarURL
+                },
+                author: {
+                    name: 'Welcome'
+                }
+            }
+        });
     }
-    catch(e){
+    catch (e) {
         console.log(e);
     }
 

@@ -7,6 +7,7 @@ const bot = new Discord.Client();
 const requiredChannels = ['welcome', 'member-log', 'terone-log'];
 const greetings = ['Hi!', 'Hey there!', 'Hello'];
 const triggerSubstring = ['hi', ' hii', 'wassup', 'yo', 'howdy', 'hola', 'heya', 'hey', 'hello', 'sup', 'morning'];
+const green = 0x42f474, red = 0xf44542, blue = 3447003, yellow = 0xffeb3b, grey = 0x747F8D;
 let args, command;
 
 
@@ -31,7 +32,6 @@ bot.on('message', message => {
     if (message.author.bot) return;
 
     let _message = message.content.split(' ').join('');
-    console.log(_message);
     if (_message.indexOf('www.') !== -1) {
         message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here's the corrected message: http://${message.content}`);
     }
@@ -56,30 +56,30 @@ bot.on('message', message => {
                     break;
                 }
             }
+            for (let i in badwords) {
+                if (_message.indexOf(badwords[i]) !== -1) {
+                    message.delete();
+                    message.channel.send({
+                        embed: {
+                            color: red,
+                            description: `No profanity ${message.author}!`,
+                            thumbnail: {
+                                url: message.author.avatarURL
+                            },
+                            author: {
+                                name: 'PROFANITY DETECTED'
+                            }
+                        }
+                    });
+                    break;
+                }
+            }
+
         }
 
         //
         // Don't use profanity with commands or mentions
         //
-
-        for (let i in badwords) {
-            if (_message.indexOf(badwords[i]) !== -1) {
-                message.delete();
-                message.channel.send({
-                    embed: {
-                        color: 0xf44542,
-                        description: `No profanity ${message.author}!`,
-                        thumbnail: {
-                            url: message.author.avatarURL
-                        },
-                        author: {
-                            name: 'PROFANITY DETECTED'
-                        }
-                    }
-                });
-                break;
-            }
-        }
 
         if (command == 'purge') purge(message);
 
@@ -88,6 +88,8 @@ bot.on('message', message => {
         if (command == 'kick') kick(message);
 
         if (command == 'say') say(message);
+
+        if (command == 'createchannel') createChannel(message);
     }
 });
 
@@ -107,13 +109,23 @@ bot.on('presenceUpdate', (oldMember, newMember) => {
                 console.log(e);
             }
         }
+        const colors = {
+            online: green,
+            offline: grey,
+            idle: yellow,
+            dnd: red
+        }
+        let color = colors[newMember.presence.status];
         try {
             newMember.guild.channels.find('name', 'member-log').send({
                 embed: {
-                    color: 3447003,
+                    color: color,
                     description: `**${newMember.user.username}** is now ${newMember.presence.status}`,
                     thumbnail: {
                         url: newMember.user.avatarURL
+                    },
+                    author: {
+                        name: `MEMBER ${newMember.presence.status.toUpperCase()}`
                     }
                 }
             });
@@ -240,7 +252,7 @@ function translator(message) {
 function kick(message) {
     let guild = message.guild;
     try {
-        if (guild.member(message.author).roles.findKey('name', 'mod')) {
+        if (guild.member(message.author).roles.exists('name', 'mod')) {
             let _member = guild.member(args[0]);
             console.log(_member);
 
@@ -256,7 +268,7 @@ function kick(message) {
                     }
                 }
             });*/
-            _member.kick();
+            message.channel.send(` ${_member.user} is _member.kickable`);
         }
         else {
             message.channel.send(`${message.author} You don't have required permissions for that`);
@@ -279,11 +291,40 @@ function say(message) {
     _message = _message.join(' ');
     message.channel.send({
         embed: {
-            color: 0x42f474,
+            color: green,
             description: `${_message}`,
             thumbnail: {
                 url: bot.user.avatarURL
             }
         }
     });
+}
+
+function createChannel(message) {
+    let channelName = args[0];
+    let channelType = args[1];
+    try {
+        if (!message.guild.channels.exists('name', channelName)) {
+            if (channelType == 'text' || channelType == 'voice') {
+                message.guild.createChannel(channelName, channelType)
+                    .then(() => {
+                        let creationTime = message.guild.channels.find('name', channelName).createdAt;
+                        message.guild.channels.find('name', 'terone-log').send({
+                            embed: {
+                                color: blue,
+                                description: `Channel **${channelName}** created by ${message.author} at ${creationTime}`,
+                                author: {
+                                    name: 'CHANNEL CREATED'
+                                }
+                            }
+                        })
+                    });
+
+            }
+            else message.channel.send('**Please check if channel already exists and if you have entered valid channel type**: `text` or `voice`');
+        }
+    }
+    catch (e) {
+        console.log(e);
+    }
 }

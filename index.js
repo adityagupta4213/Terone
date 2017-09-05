@@ -158,13 +158,46 @@ bot.on('guildMemberAdd', member => {
     try {
         _member.guild.channels.find('name', 'welcome').send({
             embed: {
-                color: 3447003,
+                color: blue,
                 description: `**Welcome** ${_member.user}! You are the ${_member.guild.memberCount + 1}th member!`,
                 thumbnail: {
                     url: bot.user.avatarURL
                 },
                 author: {
-                    name: 'Welcome'
+                    name: 'WELCOME'
+                }
+            }
+        });
+        _member.guild.channels.find('name', 'member-log').send({
+            embed: {
+                color: blue,
+                description: `${_member.user} has joined the server`,
+                thumbnail: {
+                    url: bot.user.avatarURL
+                },
+                author: {
+                    name: 'MEMBER JOINED'
+                }
+            }
+        });
+    }
+    catch (e) {
+        console.log(e);
+    }
+
+});
+bot.on('guildMemberRemove', member => {
+    let _member = member;
+    try {
+        _member.guild.channels.find('name', 'member-log').send({
+            embed: {
+                color: red,
+                description: `${_member.user} has left the server`,
+                thumbnail: {
+                    url: bot.user.avatarURL
+                },
+                author: {
+                    name: 'MEMBER LEFT'
                 }
             }
         });

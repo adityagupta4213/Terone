@@ -94,17 +94,22 @@ bot.on('message', message => {
 
         }
 
+        if (command == 'kick') kick(message);
+
+        if (command == 'createchannel') createChannel(message);
+
+        if (command == 'delchannel') deleteChannel(message);
+
+        if (command == 'createrole') createRole(message);
+
+        if (command == 'delrole') deleteRole(message);
+
         if (command == 'purge') purge(message);
 
         if (command == 'translate') translator(message);
 
-        if (command == 'kick') kick(message);
-
         if (command == 'say') say(message);
 
-        if (command == 'createchannel') createChannel(message);
-
-        if (command == 'delrole') deleteRole(message);
     }
 });
 
@@ -314,6 +319,9 @@ function separateCommand(message, isClean) {
 // Purge //
 //
 function purge(message) {
+
+    if (!message.member.hasPermission(['MANAGE_MESSAGES']))
+        return message.channel.send(`${message.author} Don't try to remove evidence :D ! You don't have the permissions to manage messages`);
     // This command removes all messages from all users in the channel, up to 100.
 
     // Get the delete count
@@ -333,6 +341,7 @@ function purge(message) {
 // Translator
 //
 function translator(message) {
+
 
     let string = [];
     // Transfer the word(s) to another array
@@ -379,22 +388,25 @@ function translator(message) {
 // Not yet functional
 //
 function kick(message) {
-    if (!message.member.roles.some(r => ["Admin", "Administrator", "Moderator"].includes(r.name)))
-        return message.reply("Sorry, you don't have permissions to use this!");
+    if (!message.member.hasPermission(['KICK_MEMBERS']))
+        return message.reply(`Sorry, you don't have permissions to use this!`);
 
     // Check if member exsits and is kicable 
     let member = message.mentions.members.first();
+    let reason = arge[1];
+    if (!reason)
+        reason = 'No specified reason';
     if (!member)
-        return message.reply("Please mention a valid member of this server");
+        return message.reply('Please mention a valid member of this server');
     if (!member.kickable)
-        return message.reply("I cannot kick this user! Do they have a higher role? Do I have kick permissions?");
+        return message.reply('I cannot kick this user! Do they have a higher role? Do I have kick permissions?');
 
     member.kick()
         .catch(error => message.reply(`Sorry ${message.author} I couldn't kick because of : ${error}`));
     message.channel.send({
         embed: {
             color: red,
-            description: `**${member.user.username}** has been kicked by the administrator`,
+            description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
             thumbnail: {
                 url: member.user.avatarURL
             },
@@ -402,7 +414,7 @@ function kick(message) {
                 name: 'MODERATION'
             }
         }
-    }); 
+    });
     message.guild.channels.find('name', 'member-log').send({
         embed: {
             color: red,
@@ -415,10 +427,8 @@ function kick(message) {
             }
         }
     });
-
-
-
 }
+
 //
 // Say stuff
 // Same logic as translator for separating message
@@ -444,6 +454,8 @@ function say(message) {
 // Creates a channel
 //
 function createChannel(message) {
+    if (!message.member.hasPermission(['MANAGE_CHANNELS']))
+        return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`);
     let channelName = args[0];
     let channelType = args[1];
     try {
@@ -470,28 +482,96 @@ function createChannel(message) {
     catch (e) {
         console.log(e);
     }
+
+}
+
+//
+// Deletes a channel
+//
+function deleteChannel(message) {
+    if (!message.member.hasPermission(['MANAGE_CHANNELS']))
+        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
+    let channel = message.mentions.channels.first();
+    console.log(channel);
+    try {
+        if (channel) {
+            channel.delete()
+                .then(() => {
+                    message.guild.channels.find('name', 'server-log').send({
+                        embed: {
+                            color: red,
+                            description: `Channel **${channel.name}** was deleted by ${message.author}`,
+                            author: {
+                                name: 'CHANNEL DELETED'
+                            }
+                        }
+                    })
+                });
+        } else message.channel.send(`**I can't really delete that channel mate!** Check if it even exists`);
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
+
+//
+// Creates a given role 
+//
+function createRole(message) {
+
+    if (!message.member.hasPermission(['MANAGE_ROLES']))
+        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
+
+    let name = args[0], color;
+
+    if (!name)
+        message.channel.send(`${message.author} **Enter a valid role name fella!**`);
+
+    if (args[1])
+        color = args[1].toUpperCase();
+
+    if (!args[1]) {
+        color = 'BLUE';
+        message.guild.createRole({
+            name, color
+        });
+        message.channel.send(`${message.author} **Role was created with default color**`);
+    }
+    else
+        message.guild.createRole({
+            name, color
+        });
+    message.guild.channels.find('server-log').send({
+        embed: {
+            color: blue,
+            description: `Role ${role} created by ${message.author}`,
+            author: {
+                name: 'ROLE CREATED'
+            }
+        }
+    })
 }
 
 //
 // Deletes a given role
 //
 function deleteRole(message) {
-    if (!message.member.roles.some(r => ["Admin", "Administrator", "Moderator"].includes(r.name)))
-        return message.reply("Sorry, you don't have permissions to use this!");
+    if (!message.member.hasPermission(['MANAGE_ROLES']))
+        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
 
     // Check if member exsits and is kicable 
     let role = message.mentions.roles.first();
     if (!role)
-        return message.reply("Please mention a valid role of this server");
+        return message.reply('Please mention a valid role of this server mate!');
     if (!role.editable)
-        return message.reply("I cannot remove this role! Check permissions?");
+        return message.reply('I cannot remove this role! Do I have the permissions?');
 
     try {
         role.delete();
         message.guild.channels.find('name', 'server-log').send({
             embed: {
                 color: red,
-                description: `Role ${role} was deleted by ${message.author}`,
+                description: `Role ${role} deleted by ${message.author}`,
                 author: {
                     name: 'ROLE DELETED'
                 }

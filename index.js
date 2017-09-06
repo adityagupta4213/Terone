@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const translate = require('google-translate-api');
 const isoConv = require('iso-language-converter');
 const badwords = require('badwords/array');
+var weather = require('weather-js');
 const config = require('./config.json');
 const bot = new Discord.Client();
 const requiredChannels = ['welcome', 'member-log', 'terone-log', 'server-log'];
@@ -108,7 +109,9 @@ bot.on('message', message => {
 
         if (command == 'renrole') renameRole(message);
 
-        if (command == 'warn') warnMember(message);
+        if (command == 'warn') warnMember(message);        
+
+        if (command == 'bulkdm') bulkDM(message);
 
         if (command == 'purge') purge(message);
 
@@ -681,6 +684,8 @@ function renameRole(message) {
 
 }
 
+//
+// Sends a warning to the channel mentioning the member as well as DMs the member
 function warnMember(message) {
     let reason = args[1];
     let member = message.mentions.members.first();
@@ -701,7 +706,7 @@ function warnMember(message) {
             }
         }
     });
-    
+
     member.user.send({
         embed: {
             color: yellow,
@@ -723,5 +728,61 @@ function warnMember(message) {
                 }
             ]
         }
+    });
+}
+
+//
+// Sends a DM to multiple members
+//
+function bulkDM(message) {
+    if (!message.member.hasPermission(['ADMINISTRATOR']))
+        return message.channel.send(`${message.author}, **you don't have the required permissions!**`);
+    // Declare an empty message array to push the message strings into later on
+    let _message = [];
+
+    // Untill a word starts with @ (mention) keep adding it to the message
+    for (let i in args) {
+        if (args[i].indexOf('@') == -1)
+            _message.push(args[i])
+    }
+    _message = _message.join(' ');
+    console.log(_message);
+
+    // Get the snowflake separated 
+    let users = args.splice(1, args.length);
+    // Find every user in the array and sent them the message
+    try {
+        for (let i in users) {
+            users[i] = users[i].split('').splice(2, users[i].length - 3).join('');
+            console.log(users[i]);
+            bot.fetchUser(users[i]).then(user => user.send({
+                embed: {
+                    color: blue,
+                    description: `${_message}`,
+                    author: {
+                        name: 'DM from Administrator'
+                    }
+                }
+            }));
+            message.guild.channels.find('name', 'server-log').send({
+                embed: {
+                    color: blue,
+                    description: `Bulk DM sent successfully`
+                }
+            })
+        }
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
+
+function findWeather(message) {
+    let location = args[0];
+    let unit = args[1];
+    weather.find({ search: location, degreeType: unit }, function (err, result) {
+        if (err) console.log(err);
+
+        console.log(JSON.stringify(result, null, 2));
     });
 }

@@ -2,7 +2,6 @@ const Discord = require('discord.js');
 const translate = require('google-translate-api');
 const isoConv = require('iso-language-converter');
 const badwords = require('badwords/array');
-var weather = require('weather-js');
 const config = require('./config.json');
 const bot = new Discord.Client();
 const requiredChannels = ['welcome', 'member-log', 'terone-log', 'server-log'];
@@ -17,17 +16,6 @@ let args, command;
 bot.on('ready', () => {
     console.log('Online!');
     bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } });
-});
-
-//
-// Create required channels
-//
-bot.on('guildCreate', guild => {
-    for (let i in requiredChannels) {
-        if (!guild.channels.exists('name', requiredChannels[i])) {
-            guild.createChannel(requiredChannels[i], 'text');
-        }
-    }
 });
 
 
@@ -118,6 +106,8 @@ bot.on('message', message => {
         if (command == 'translate') translator(message);
 
         if (command == 'say') say(message);
+
+        if (command == 'weather') findWeather(message);
 
     }
 });
@@ -227,6 +217,11 @@ bot.on('guildMemberRemove', member => {
 // Server join log
 //
 bot.on('guildCreate', guild => {
+    for (let i in requiredChannels) {
+        if (!guild.channels.exists('name', requiredChannels[i])) {
+            guild.createChannel(requiredChannels[i], 'text');
+        }
+    }
     bot.channels.find('name', 'terone-log').send({
         embed: {
             color: 3447003,
@@ -735,14 +730,14 @@ function warnMember(message) {
 // Sends a DM to multiple members
 //
 function bulkDM(message) {
-    if (!message.member.hasPermission(['ADMINISTRATOR']))
-        return message.channel.send(`${message.author}, **you don't have the required permissions!**`);
+    //if (!message.member.hasPermission(['ADMINISTRATOR']))
+    //    return message.channel.send(`${message.author}, **you don't have the required permissions!**`);
     // Declare an empty message array to push the message strings into later on
     let _message = [];
 
-    // Untill a word starts with @ (mention) keep adding it to the message
+    // Untill a word starts with < (mention) keep adding it to the message
     for (let i in args) {
-        if (args[i].indexOf('@') == -1)
+        if (args[i].indexOf('<') == -1)
             _message.push(args[i])
     }
     _message = _message.join(' ');
@@ -775,14 +770,4 @@ function bulkDM(message) {
     catch (e) {
         console.log(e);
     }
-}
-
-function findWeather(message) {
-    let location = args[0];
-    let unit = args[1];
-    weather.find({ search: location, degreeType: unit }, function (err, result) {
-        if (err) console.log(err);
-
-        console.log(JSON.stringify(result, null, 2));
-    });
 }

@@ -96,13 +96,19 @@ bot.on('message', message => {
 
         if (command == 'kick') kick(message);
 
+        if (command == 'ban') ban(message);
+
         if (command == 'createchannel') createChannel(message);
 
         if (command == 'delchannel') deleteChannel(message);
 
-        if (command == 'createrole') createRole(message);
+        if (command == 'createrole') _createRole(message);
 
         if (command == 'delrole') deleteRole(message);
+
+        if (command == 'renrole') renameRole(message);
+
+        if (command == 'warn') warnMember(message);
 
         if (command == 'purge') purge(message);
 
@@ -250,9 +256,8 @@ bot.on('guildCreate', guild => {
     });
 });
 
-
 //
-// Server left log
+// Server leave log
 //
 bot.on('guildDelete', guild => {
     bot.channels.find('name', 'terone-log').send({
@@ -293,17 +298,12 @@ bot.on('guildDelete', guild => {
 
 bot.login(config.token);
 
-
 //
 // Separate commands from arguments
 //
-function separateCommand(message, isClean) {
+function separateCommand(message) {
     // Store the content in a temp var
     let _message = message.content;
-    // If a message with cleanContent is to be separated
-    if (isClean) {
-        _message = message;
-    }
     // Split the message, remove the bot mention, rejoin and then remove the + prefix
     _message = _message.split(' ');
     _message.splice(0, 1);
@@ -385,7 +385,6 @@ function translator(message) {
 
 //
 // Kick members
-// Not yet functional
 //
 function kick(message) {
     if (!message.member.hasPermission(['KICK_MEMBERS']))
@@ -393,7 +392,7 @@ function kick(message) {
 
     // Check if member exsits and is kicable 
     let member = message.mentions.members.first();
-    let reason = arge[1];
+    let reason = args[1];
     if (!reason)
         reason = 'No specified reason';
     if (!member)
@@ -401,32 +400,77 @@ function kick(message) {
     if (!member.kickable)
         return message.reply('I cannot kick this user! Do they have a higher role? Do I have kick permissions?');
 
-    member.kick()
-        .catch(error => message.reply(`Sorry ${message.author} I couldn't kick because of : ${error}`));
-    message.channel.send({
-        embed: {
-            color: red,
-            description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
-            thumbnail: {
-                url: member.user.avatarURL
-            },
-            author: {
-                name: 'MODERATION'
-            }
+    member.kick(reason)
+        .then(() => {
+            message.channel.send({
+                embed: {
+                    color: red,
+                    description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
+                    thumbnail: {
+                        url: member.user.avatarURL
+                    },
+                    author: {
+                        name: 'MODERATION'
+                    }
+                }
+            });
+            message.guild.channels.find('name', 'server-log').send({
+                embed: {
+                    color: red,
+                    description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
+                    thumbnail: {
+                        url: member.user.avatarURL
+                    },
+                    author: {
+                        name: 'MODERATION'
+                    }
+                }
+            });
+
+        })
+        .catch(error => message.channel.send(`Sorry ${message.author} I couldn't kick that member because of : ${error}`));
+}
+
+//
+// Ban members
+//
+function ban(message) {
+    if (!message.member.hasPermission(['BAN_MEMBERS']))
+        return message.channel.send(`${message.author} You sure about that? Apparently, **you don't have the required permissions.**`);
+    let member = message.mentions.members.first();
+    let reason = args[1];
+    if (!reason)
+        reason = 'No specific reason';
+    member.ban(reason)
+        .then(() => {
+            message.channel.send({
+                embed: {
+                    color: red,
+                    description: `**${member.user.username}** has been banned by the moderators/administrators because of: ${reason}`,
+                    thumbnail: {
+                        url: member.user.avatarURL
+                    },
+                    author: {
+                        name: 'MODERATION'
+                    }
+                }
+            });
+            message.guild.channels.find('name', 'server-log').send({
+                embed: {
+                    color: red,
+                    description: `**${member.user.username}** has been banned by the administrator`,
+                    thumbnail: {
+                        url: member.user.avatarURL
+                    },
+                    author: {
+                        name: 'MODERATION'
+                    }
+                }
+            });
         }
-    });
-    message.guild.channels.find('name', 'member-log').send({
-        embed: {
-            color: red,
-            description: `**${member.user.username}** has been kicked by the administrator`,
-            thumbnail: {
-                url: member.user.avatarURL
-            },
-            author: {
-                name: 'MODERATION'
-            }
-        }
-    });
+        )
+        .catch(error => message.channel.send(`Sorry ${message.author} I couldn't ban that member because of : ${error}`));
+
 }
 
 //
@@ -517,39 +561,56 @@ function deleteChannel(message) {
 //
 // Creates a given role 
 //
-function createRole(message) {
+function _createRole(message) {
 
+    // IF the member has required permissions
     if (!message.member.hasPermission(['MANAGE_ROLES']))
         return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
 
-    let name = args[0], color;
+    message.guild.createRole();
 
-    if (!name)
-        message.channel.send(`${message.author} **Enter a valid role name fella!**`);
-
-    if (args[1])
-        color = args[1].toUpperCase();
-
-    if (!args[1]) {
-        color = 'BLUE';
-        message.guild.createRole({
-            name, color
-        });
-        message.channel.send(`${message.author} **Role was created with default color**`);
-    }
-    else
-        message.guild.createRole({
-            name, color
-        });
-    message.guild.channels.find('server-log').send({
-        embed: {
-            color: blue,
-            description: `Role ${role} created by ${message.author}`,
-            author: {
-                name: 'ROLE CREATED'
-            }
+    /*
+        let name = args[0], color;
+        // If the name is a falsy value, don't do anything
+        if (!name)
+            message.channel.send(`${message.author} **Enter a valid role name fella!**`);
+    
+        // If color is defined
+        if (args[1])
+            color = args[1].toUpperCase();
+        // If color isn't defined, create a role with default blue
+        if (!args[1]) {
+            color = 'DEFAULT';
+            message.guild.createRole({
+                name: name,
+                color: color,
+            })
+            .then(message.channel.send(`${message.author} **Role was created with default color**`))
+            .catch(error => message.channel.send(`Couldn't create role due to ${error}`))
+            log();
         }
-    })
+    
+        // Else use the specified color
+        else {
+            message.guild.createRole({
+                name: name,
+                color: color,
+            });
+            log();
+        }
+    
+        // Send the log message to server-log
+        function log() {
+            message.guild.channels.find('server-log').send({
+                embed: {
+                    color: blue,
+                    description: `Role ${name} created by ${message.author}`,
+                    author: {
+                        name: 'ROLE CREATED'
+                    }
+                }
+            });
+        }*/
 }
 
 //
@@ -559,7 +620,7 @@ function deleteRole(message) {
     if (!message.member.hasPermission(['MANAGE_ROLES']))
         return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
 
-    // Check if member exsits and is kicable 
+
     let role = message.mentions.roles.first();
     if (!role)
         return message.reply('Please mention a valid role of this server mate!');
@@ -581,4 +642,86 @@ function deleteRole(message) {
     catch (e) {
         console.log(e);
     }
+}
+
+
+//
+// Renames a given role 
+//
+function renameRole(message) {
+    if (!message.member.hasPermission(['MANAGE_ROLES']))
+        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
+
+    let role = message.mentions.roles.first();
+    // Store the name in a var for backup
+    let roleName = role.name;
+    let name = args[1];
+    if (!role)
+        return message.reply('Please mention a valid role of this server mate!');
+    if (!role.editable)
+        return message.reply('I cannot remove this role! Do I have the permissions?');
+
+
+    try {
+        role.edit({ name });
+        message.guild.channels.find('name', 'server-log').send({
+            embed: {
+                color: red,
+                description: `Role **${roleName}** was renamed to **${name}** by ${message.author}`,
+                author: {
+                    name: 'ROLE MODIFIED'
+                }
+            }
+        });
+    }
+    catch (e) {
+        console.log(e);
+    }
+
+
+}
+
+function warnMember(message) {
+    let reason = args[1];
+    let member = message.mentions.members.first();
+
+    if (!reason)
+        return message.channel.send(`${message.author}, please provide a reason for the warning`);
+
+    message.channel.send({
+        embed: {
+            color: yellow,
+            description: `${member} has been warned by ${message.author} for **${reason}**`,
+            author: {
+                name: 'WARNING',
+                icon_url: message.author.avatarURL
+            },
+            thumbnail: {
+                url: member.user.avatarURL
+            }
+        }
+    });
+    
+    member.user.send({
+        embed: {
+            color: yellow,
+            author: {
+                icon_url: message.author.avatarURL
+            },
+            fields: [
+                {
+                    "name": "Warning",
+                    "value": `You've been warned!`
+                },
+                {
+                    "name": "Server",
+                    "value": `${message.guild.name}`
+                },
+                {
+                    "name": "Reason",
+                    "value": `${reason}`
+                }
+            ]
+        }
+    });
 }

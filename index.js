@@ -14,6 +14,7 @@ let args, command;
 // Server count as current game
 //
 bot.on('ready', () => {
+    console.log('Online!');
     bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } });
 });
 
@@ -269,6 +270,10 @@ bot.on('guildDelete', guild => {
                     "value": `${guild.region}`
                 },
                 {
+                    "name": "Server ID",
+                    "value": `${guild.id}`
+                },
+                {
                     "name": "Joined at",
                     "value": `${guild.joinedAt}`
                 },
@@ -374,35 +379,46 @@ function translator(message) {
 // Not yet functional
 //
 function kick(message) {
-    let guild = message.guild;
-    try {
-        if (guild.member(message.author).roles.exists('name', 'mod')) {
-            let _member = guild.member(args[0]);
-            console.log(_member);
+    if (!message.member.roles.some(r => ["Admin", "Administrator", "Moderator"].includes(r.name)))
+        return message.reply("Sorry, you don't have permissions to use this!");
 
-            /*message.channel.send({
-                embed: {
-                    color: 3447003,
-                    description: `**${_member.user.username}** has been kicked by moderators`,
-                    thumbnail: {
-                        url: _member.user.avatarURL
-                    },
-                    author: {
-                        name: 'MOD'
-                    }
-                }
-            });*/
-            message.channel.send(` ${_member.user} is _member.kickable`);
+    // Check if member exsits and is kicable 
+    let member = message.mentions.members.first();
+    if (!member)
+        return message.reply("Please mention a valid member of this server");
+    if (!member.kickable)
+        return message.reply("I cannot kick this user! Do they have a higher role? Do I have kick permissions?");
+
+    member.kick()
+        .catch(error => message.reply(`Sorry ${message.author} I couldn't kick because of : ${error}`));
+    message.channel.send({
+        embed: {
+            color: red,
+            description: `**${member.user.username}** has been kicked by the administrator`,
+            thumbnail: {
+                url: member.user.avatarURL
+            },
+            author: {
+                name: 'MODERATION'
+            }
         }
-        else {
-            message.channel.send(`${message.author} You don't have required permissions for that`);
+    }); 
+    message.guild.channels.find('name', 'member-log').send({
+        embed: {
+            color: red,
+            description: `**${member.user.username}** has been kicked by the administrator`,
+            thumbnail: {
+                url: member.user.avatarURL
+            },
+            author: {
+                name: 'MODERATION'
+            }
         }
-    }
-    catch (e) {
-        console.log(e);
-    }
+    });
+
+
+
 }
-
 //
 // Say stuff
 // Same logic as translator for separating message
@@ -460,20 +476,22 @@ function createChannel(message) {
 // Deletes a given role
 //
 function deleteRole(message) {
-    // Remove @mentions
-    let _message = message.cleanContent;
-    // Separate the commands from cleaed message    
-    separateCommand(_message, true);
-    // Remove the @
-    let roleName = args[0].split('').splice(1).join('');
-    let role = message.guild.roles.find('name', roleName);
+    if (!message.member.roles.some(r => ["Admin", "Administrator", "Moderator"].includes(r.name)))
+        return message.reply("Sorry, you don't have permissions to use this!");
+
+    // Check if member exsits and is kicable 
+    let role = message.mentions.roles.first();
+    if (!role)
+        return message.reply("Please mention a valid role of this server");
+    if (!role.editable)
+        return message.reply("I cannot remove this role! Check permissions?");
 
     try {
         role.delete();
         message.guild.channels.find('name', 'server-log').send({
             embed: {
                 color: red,
-                description: `Role ${roleName} was deleted by ${message.author}`,
+                description: `Role ${role} was deleted by ${message.author}`,
                 author: {
                     name: 'ROLE DELETED'
                 }

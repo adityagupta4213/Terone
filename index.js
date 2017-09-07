@@ -52,7 +52,7 @@ bot.on('message', message => {
         if (_message.indexOf('+') == -1) {
             for (let i in triggerSubstring) {
                 // Check the whole sentence for greetings instead of just the trigger command
-                if (_message.search(triggerSubstring[i]) !== -1) {
+                if (_message.indexOf(triggerSubstring[i]) !== -1) {
                     let index = Math.floor(Math.random() * greetings.length);
                     message.channel.send(`${greetings[index]} ${message.author}`);
                     break;
@@ -97,7 +97,7 @@ bot.on('message', message => {
 
         if (command == 'renrole') renameRole(message);
 
-        if (command == 'warn') warnMember(message);        
+        if (command == 'warn') warnMember(message);
 
         if (command == 'bulkdm') bulkDM(message);
 
@@ -106,8 +106,6 @@ bot.on('message', message => {
         if (command == 'translate') translator(message);
 
         if (command == 'say') say(message);
-
-        if (command == 'weather') findWeather(message);
 
     }
 });
@@ -295,6 +293,7 @@ bot.on('guildDelete', guild => {
 });
 
 bot.login(config.token);
+
 
 //
 // Separate commands from arguments
@@ -616,7 +615,7 @@ function _createRole(message) {
 //
 function deleteRole(message) {
     if (!message.member.hasPermission(['MANAGE_ROLES']))
-        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
+        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!**`);
 
 
     let role = message.mentions.roles.first();
@@ -730,8 +729,8 @@ function warnMember(message) {
 // Sends a DM to multiple members
 //
 function bulkDM(message) {
-    //if (!message.member.hasPermission(['ADMINISTRATOR']))
-    //    return message.channel.send(`${message.author}, **you don't have the required permissions!**`);
+    if (!message.member.hasPermission(['ADMINISTRATOR']))
+        return message.channel.send(`${message.author}, **you don't have the required permissions!**`);
     // Declare an empty message array to push the message strings into later on
     let _message = [];
 
@@ -741,7 +740,6 @@ function bulkDM(message) {
             _message.push(args[i])
     }
     _message = _message.join(' ');
-    console.log(_message);
 
     // Get the snowflake separated 
     let users = args.splice(1, args.length);
@@ -749,7 +747,6 @@ function bulkDM(message) {
     try {
         for (let i in users) {
             users[i] = users[i].split('').splice(2, users[i].length - 3).join('');
-            console.log(users[i]);
             bot.fetchUser(users[i]).then(user => user.send({
                 embed: {
                     color: blue,
@@ -771,3 +768,17 @@ function bulkDM(message) {
         console.log(e);
     }
 }
+/*
+function findWeather(message) {
+    let city = args.join('');
+    let appID = config.appID;
+
+    let url = `http://api.openweathermap.org/data/2.5/forecast/daily?&city=${city}&units=C&cnt=1&appid=${appID}`;
+
+    getJSON(url, function (error, response) {
+        if (error) {
+            console.log(error);
+        }
+        console.log(response.result);
+    });
+}*/

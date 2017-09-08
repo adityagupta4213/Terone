@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const translate = require('google-translate-api');
 const isoConv = require('iso-language-converter');
+const justGetJSON = require('just-get-json');
 const badwords = require('badwords/array');
 const config = require('./config.json');
 const bot = new Discord.Client();
@@ -106,6 +107,8 @@ bot.on('message', message => {
         if (command == 'translate') translator(message);
 
         if (command == 'say') say(message);
+
+        if (command == 'weather') findWeather(message);
 
     }
 });
@@ -768,17 +771,53 @@ function bulkDM(message) {
         console.log(e);
     }
 }
-/*
+
 function findWeather(message) {
-    let city = args.join('');
-    let appID = config.appID;
+    // Separate the city name from unit
+    const city = args.splice(0,args.length-1).join('');
+    if (!city)
+        return message.channel.send('**Please provide a valid city name with country code and preferred temperature unit (celsius/fahrenheit) in the syntax: <city>, <country> <unit></unit>**');
+    // Set unit as metric or imperial
+    const unit = args[0].toUpperCase() == 'C' ? 'metric' : 'imperial';
+    // Also keep another variable for displaying unit in results
+    const _unit = args[0].toUpperCase();
+    const appID = config.appID;    
+    const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${appID}`;
+    let data;
+    try{
+        data = justGetJSON(url);        
+    }
+    catch(e){
+        message.channel.send(e);
+    }
 
-    let url = `http://api.openweathermap.org/data/2.5/forecast/daily?&city=${city}&units=C&cnt=1&appid=${appID}`;
+    const cityName = data.name;
+    const countryCode = data.sys.country;
+    const temp = data.main.temp;
+    const condition = data.weather[0].main;
+    const humidity = data.main.humidity;
 
-    getJSON(url, function (error, response) {
-        if (error) {
-            console.log(error);
+    message.channel.send({
+        embed: {
+            color: blue,
+            description: `Here are the weather conditions for **${cityName}, ${countryCode}**`,
+            author: {
+                name: 'WEATHER'
+            },
+            fields: [
+                {
+                    "name": "Temperature",
+                    "value": `${temp}°${_unit}`
+                },
+                {
+                    "name": "Sky",
+                    "value": `${condition}`
+                },
+                {
+                    "name": "Humidity",
+                    "value": `${humidity}`
+                }
+            ]
         }
-        console.log(response.result);
-    });
-}*/
+    });    
+}

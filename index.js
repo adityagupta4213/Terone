@@ -5,11 +5,13 @@ const isoConv = require('iso-language-converter');
 const justGetJSON = require('just-get-json');
 const badwords = require('badwords/array');
 const config = require('./config.json');
+const help = require('./help.json');
 const bot = new Discord.Client();
 const app = apiai(config.apiaiToken);
+const prefix = config.prefix;
 const requiredChannels = ['welcome', 'member-log', 'terone-log', 'server-log'];
 const green = 0x42f474, red = 0xf44542, blue = 3447003, yellow = 0xffeb3b, grey = 0x747F8D;
-let args, command;
+let args, command, profanity = false;
 
 
 //
@@ -25,6 +27,9 @@ bot.on('message', message => {
 
     // If the user is a bot itself, don't do anything in order to prevet unwanted loops
     if (message.author.bot) return;
+    // Ignore anything that doesn't have the prefix or bot mentioned
+    if (!message.isMentioned(bot.user) && message.content.indexOf(prefix) !== 0) return;
+
 
     //
     // HTTP auto prefixing
@@ -38,70 +43,72 @@ bot.on('message', message => {
         }
     }
 
-    // Only run if bot is mentioned
-    if (message.isMentioned(bot.user)) {
 
-        // Separate command from args
-        separateCommand(message);
+    // Separate command from args
+    separateCommand(message);
 
-        //
-        // General greetings //
-        //
+    //
+    // General greetings //
+    //
 
-        // Convert to lowercase in order to deal with all variations of spellings
+    // Convert to lowercase in order to deal with all variations of spellings
 
-        ////////// AI CONVERSATIONAL AGENT IS CURRENTLY UNDER TRAINING //////////
-        if (message.content.indexOf('+') == -1) {
-            // Remove the bot mention from the message
-            let _message = message.content.split(' ').slice(1).join(' ');
-            // Generate a random session ID
-            let randomID = Math.floor(Math.random() * 9999);
-            // Call the agent
-            let request = app.textRequest(`${_message}`, {sessionId: randomID});
-
-            request.on('response', function (response) {
-                // Log all responses.
-                console.log(response);
-                // Set response text equal to the output speech. 
-                let responseText = response.result.fulfillment.speech;
-                // If response is not available, return default
-                if (!responseText)
-                    message.reply(`I'm afraid I don't have a reply to that. I'm trying to get better every day though`);
-                else
-                    message.reply(`${responseText}`);
-            });
-
-            request.on('error', function (error) {
-                console.log(error);
-            });
-
-
-            request.end();
-        }
-        //
-        // Don't use profanity with mentions
-        //
-        _message = message.content.toLowerCase();
-        for (let i in badwords) {
-            if (_message.search(badwords[i]) !== -1) {
-                message.delete();
-                message.channel.send({
-                    embed: {
-                        color: red,
-                        description: `No profanity ${message.author}!`,
-                        thumbnail: {
-                            url: message.author.avatarURL
-                        },
-                        author: {
-                            name: 'PROFANITY DETECTED'
-                        }
+    //
+    // Check for vulgar comments
+    //
+    _message = message.content.toLowerCase();
+    for (let i in badwords) {
+        if (_message.search(badwords[i]) !== -1) {
+            profanity = true;
+            message.delete();
+            message.channel.send({
+                embed: {
+                    color: red,
+                    description: `No profanity ${message.author}!`,
+                    thumbnail: {
+                        url: message.author.avatarURL
+                    },
+                    author: {
+                        name: 'PROFANITY DETECTED'
                     }
-                });
-                break;
-            }
+                }
+            });
+            break;
         }
-
+        else
+            profanity = false;
     }
+
+    ////////// AI CONVERSATIONAL AGENT IS CURRENTLY UNDER TRAINING //////////
+    if (message.content.indexOf(prefix) == -1 && !profanity) {
+        // Remove the bot mention from the message
+        let _message = message.content.split(' ').slice(1).join(' ');
+        // Generate a random session ID
+        let randomID = Math.floor(Math.random() * 9999);
+        // Call the agent
+        let request = app.textRequest(`${_message}`, { sessionId: randomID });
+
+        request.on('response', function (response) {
+            // Log all responses.
+            console.log(response);
+            // Set response text equal to the output speech. 
+            let responseText = response.result.fulfillment.speech;
+            // If response is not available, return default
+            if (!responseText)
+                message.reply(`I'm afraid I don't have a reply to that. I'm trying to get better every day though`);
+            else
+                message.reply(`${responseText}`);
+        });
+
+        request.on('error', function (error) {
+            console.log(error);
+        });
+
+
+        request.end();
+    }
+
+
 
     if (command == 'kick') kick(message);
 
@@ -120,6 +127,8 @@ bot.on('message', message => {
     if (command == 'warn') warnMember(message);
 
     if (command == 'bulkdm') bulkDM(message);
+
+    if (command == 'help') _help(message);
 
     if (command == 'purge') purge(message);
 
@@ -322,10 +331,8 @@ bot.login(config.token);
 function separateCommand(message) {
     // Store the content in a temp var
     let _message = message.content;
-    // Split the message, remove the bot mention, rejoin and then remove the + prefix
-    _message = _message.split(' ');
-    _message.splice(0, 1);
-    args = _message.join(' ').slice(1).trim().split(/ +/g);
+    // Split the message and then remove the ++ prefix
+    args = _message.slice(prefix.length).trim().split(/ +/g);
     // Separate the command from the arguments
     command = args.shift().toLowerCase();
 
@@ -585,50 +592,33 @@ function _createRole(message) {
     if (!message.member.hasPermission(['MANAGE_ROLES']))
         return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
 
-    message.guild.createRole();
+    let name = args[0];
+    let color = args[1];
+    if (!name)
+        return message.reply('**Please enter a valid role name**');
+    if (!color)
+        color = 'DEFAULT';
+    else  
+        color.toUpperCase();
+    message.guild.createRole({
+        name, color, mentionable: true
+    })
+    .then(log())
+    .catch((e) => message.channel.send(e));
 
-    /*
-        let name = args[0], color;
-        // If the name is a falsy value, don't do anything
-        if (!name)
-            message.channel.send(`${message.author} **Enter a valid role name fella!**`);
-    
-        // If color is defined
-        if (args[1])
-            color = args[1].toUpperCase();
-        // If color isn't defined, create a role with default blue
-        if (!args[1]) {
-            color = 'DEFAULT';
-            message.guild.createRole({
-                name: name,
-                color: color,
-            })
-            .then(message.channel.send(`${message.author} **Role was created with default color**`))
-            .catch(error => message.channel.send(`Couldn't create role due to ${error}`))
-            log();
-        }
-    
-        // Else use the specified color
-        else {
-            message.guild.createRole({
-                name: name,
-                color: color,
-            });
-            log();
-        }
-    
-        // Send the log message to server-log
-        function log() {
-            message.guild.channels.find('server-log').send({
-                embed: {
-                    color: blue,
-                    description: `Role ${name} created by ${message.author}`,
-                    author: {
-                        name: 'ROLE CREATED'
-                    }
+
+    // Send the log message to server-log
+    function log() {
+        message.guild.channels.find('name','server-log').send({
+            embed: {
+                color: blue,
+                description: `Role **${name}** created by ${message.author}`,
+                author: {
+                    name: 'ROLE CREATED'
                 }
-            });
-        }*/
+            }
+        });
+    }
 }
 
 //
@@ -640,6 +630,7 @@ function deleteRole(message) {
 
 
     let role = message.mentions.roles.first();
+    let roleName = role.name;
     if (!role)
         return message.reply('Please mention a valid role of this server mate!');
     if (!role.editable)
@@ -650,7 +641,7 @@ function deleteRole(message) {
         message.guild.channels.find('name', 'server-log').send({
             embed: {
                 color: red,
-                description: `Role ${role} deleted by ${message.author}`,
+                description: `Role **${roleName}** deleted by ${message.author}`,
                 author: {
                     name: 'ROLE DELETED'
                 }
@@ -794,7 +785,7 @@ function findWeather(message) {
     // Separate the city name from unit
     const city = args.splice(0, args.length - 1).join('');
     if (!city)
-        return message.channel.send('**Please provide a valid city name with country code and preferred temperature unit (celsius/fahrenheit) in the syntax: <city>, <country> <unit></unit>**');
+        return message.channel.send('**Please provide a valid city name along with preferred temperature unit (celsius/fahrenheit) in the syntax: <city>, <country> <unit></unit>**');
     // Set unit as metric or imperial
     const unit = args[0].toUpperCase() == 'C' ? 'metric' : 'imperial';
     // Also keep another variable for displaying unit in results
@@ -838,4 +829,24 @@ function findWeather(message) {
             ]
         }
     });
+}
+// Under development
+function _help(message){
+    for (let i in help){
+        if (help.hasOwnProperty(i)){
+            for (let j in help[i]){
+                if (help[i].hasOwnProperty(j)){
+                    message.author.send(
+                        `**${help[i]}** \n
+                        \t __${help[i][j]}__ \n
+                        \t \t *Name*: **${help[i][j].name}** \n
+                        \t \t *Description*: **${help[i][j].description}** \n
+                        \t \t *Command*: **${help[i][j].command}** \n
+                        \t \t *Syntax*:  **${help[i][j].syntax}** \n
+                        \t \t *Example*:  **${help[i][j].example}** \n                        `
+                    );
+                }
+            }
+        }
+    }
 }

@@ -1,0 +1,99 @@
+{
+    "Administrative Commands": [
+        {
+            "name": "Create Channel",
+            "description": "Create a channel in the server",
+            "command": "++createchannel",
+            "syntax": "++createchannel <#channelName (no spaces)>",
+            "example": "++createchannel new-channel"
+        },
+        {
+            "name": "Delete Channel",
+            "description": "Delete a channel from the server",
+            "command": "++delchannel",
+            "syntax": "++delchannel <#channelMention>",
+            "example": "++delchannel"
+        },
+        {
+            "name": "Create Role",
+            "description": "Create a (mentionable) role either with a specified color or with default.",
+            "command": "++createrole",
+            "syntax": "++createrole <roleName (no spaces)> <color>",
+            "example": "++createrole new-role pink"
+        },
+        {
+            "name": "Delete Role",
+            "description": "Delete a role",
+            "command": "++delrole",
+            "syntax": "++delrole <@roleMention>",
+            "example": "++delrole @new-role"
+        },
+        {
+            "name": "Rename Role",
+            "description": "Rename a role",
+            "command": "++renrole",
+            "syntax": "++renrole <@roleMention> <new name>",
+            "example": "++renrole @new-role anotherRole"
+        },
+        {
+            "name": "Bulk DM",
+            "description": "Send the same message to multiple members of the server as a direct message",
+            "command": "++bulkdm",
+            "syntax": "++bulkdm <@memberMention>",
+            "example": "++bulkdm @member1 @member2 @member5 Howdy!"
+        }
+    ],
+    "Moderation Commands": [
+       {
+            "name": "Kick Member",
+            "description": "Kick a member from the server",
+            "command": "++kick",
+            "syntax": "++kick <@memberMention>",
+            "example": "++kick @member"
+        },
+        {
+            "name": "Ban Member",
+            "description": "Ban a member from a server",
+            "command": "++ban",
+            "syntax": "++ban <@memberMention>",
+            "example": "++ban @member"
+        },
+        {
+            "name": "Warn Member",
+            "description": "Warn a member with a warning message in the channel as well as a direct message",
+            "command": "++warn",
+            "syntax": "++warn <@memberMention> <reason>",
+            "example": "++warn @member spamming"
+        },
+        {
+            "name": "Purge",
+            "description": "Bulk delete messages upto 100 under 14 days old",
+            "command": "++purge",
+            "syntax": "++purge <count>",
+            "example": "++purge 15"
+        }
+    ],
+    "Miscellaneous Commands": [
+        {
+            "name": "Say",
+            "description": "Make me say something on the channel",
+            "command": "++say",
+            "syntax": "++say <message>",
+            "example": "++say Hey there!"
+        },
+        {
+            "name": "Translate",
+            "description": "Translate a given word/sentence to most languages",
+            "command": "++translate",
+            "syntax": "++translate <string> <targetLanguageName>",
+            "example": "++translate Hello spanish"
+        },
+        {
+            "name": "Weather",
+            "description": "Get the weather of almost any location",
+            "command": "++weather",
+            "syntax": "++weather <location w/out country code> <temperatureUnit (C/F)>",
+            "example": "++weather new york c"
+        }
+    ]
+}

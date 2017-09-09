@@ -1,15 +1,16 @@
 const Discord = require('discord.js');
+const apiai = require('apiai');
 const translate = require('google-translate-api');
 const isoConv = require('iso-language-converter');
 const justGetJSON = require('just-get-json');
 const badwords = require('badwords/array');
 const config = require('./config.json');
 const bot = new Discord.Client();
+const app = apiai(config.apiaiToken);
 const requiredChannels = ['welcome', 'member-log', 'terone-log', 'server-log'];
-const greetings = ['Hi!', 'Hey there!', 'Hello'];
-const triggerSubstring = ['hi', ' hii', 'wassup', 'yo', 'howdy', 'hola', 'heya', 'hey', 'hello', 'sup', 'morning'];
 const green = 0x42f474, red = 0xf44542, blue = 3447003, yellow = 0xffeb3b, grey = 0x747F8D;
 let args, command;
+
 
 //
 // Server count as current game
@@ -48,69 +49,86 @@ bot.on('message', message => {
         //
 
         // Convert to lowercase in order to deal with all variations of spellings
-        let _message = message.content.toLowerCase();
-        // Prevent greetings if any command is given (eg. +translate hello fr would not make the bot say hello along with the result)
-        if (_message.indexOf('+') == -1) {
-            for (let i in triggerSubstring) {
-                // Check the whole sentence for greetings instead of just the trigger command
-                if (_message.indexOf(triggerSubstring[i]) !== -1) {
-                    let index = Math.floor(Math.random() * greetings.length);
-                    message.channel.send(`${greetings[index]} ${message.author}`);
-                    break;
-                }
-            }
 
-            //
-            // Don't use profanity with mentions
-            //
-            for (let i in badwords) {
-                if (_message.search(badwords[i]) !== -1) {
-                    message.delete();
-                    message.channel.send({
-                        embed: {
-                            color: red,
-                            description: `No profanity ${message.author}!`,
-                            thumbnail: {
-                                url: message.author.avatarURL
-                            },
-                            author: {
-                                name: 'PROFANITY DETECTED'
-                            }
+        ////////// AI CONVERSATIONAL AGENT IS CURRENTLY UNDER TRAINING //////////
+        if (message.content.indexOf('+') == -1) {
+            // Remove the bot mention from the message
+            let _message = message.content.split(' ').slice(1).join(' ');
+            // Generate a random session ID
+            let randomID = Math.floor(Math.random() * 9999);
+            // Call the agent
+            let request = app.textRequest(`${_message}`, {sessionId: randomID});
+
+            request.on('response', function (response) {
+                // Log all responses.
+                console.log(response);
+                // Set response text equal to the output speech. 
+                let responseText = response.result.fulfillment.speech;
+                // If response is not available, return default
+                if (!responseText)
+                    message.reply(`I'm afraid I don't have a reply to that. I'm trying to get better every day though`);
+                else
+                    message.reply(`${responseText}`);
+            });
+
+            request.on('error', function (error) {
+                console.log(error);
+            });
+
+
+            request.end();
+        }
+        //
+        // Don't use profanity with mentions
+        //
+        _message = message.content.toLowerCase();
+        for (let i in badwords) {
+            if (_message.search(badwords[i]) !== -1) {
+                message.delete();
+                message.channel.send({
+                    embed: {
+                        color: red,
+                        description: `No profanity ${message.author}!`,
+                        thumbnail: {
+                            url: message.author.avatarURL
+                        },
+                        author: {
+                            name: 'PROFANITY DETECTED'
                         }
-                    });
-                    break;
-                }
+                    }
+                });
+                break;
             }
-
         }
 
-        if (command == 'kick') kick(message);
-
-        if (command == 'ban') ban(message);
-
-        if (command == 'createchannel') createChannel(message);
-
-        if (command == 'delchannel') deleteChannel(message);
-
-        if (command == 'createrole') _createRole(message);
-
-        if (command == 'delrole') deleteRole(message);
-
-        if (command == 'renrole') renameRole(message);
-
-        if (command == 'warn') warnMember(message);
-
-        if (command == 'bulkdm') bulkDM(message);
-
-        if (command == 'purge') purge(message);
-
-        if (command == 'translate') translator(message);
-
-        if (command == 'say') say(message);
-
-        if (command == 'weather') findWeather(message);
-
     }
+
+    if (command == 'kick') kick(message);
+
+    if (command == 'ban') ban(message);
+
+    if (command == 'createchannel') createChannel(message);
+
+    if (command == 'delchannel') deleteChannel(message);
+
+    if (command == 'createrole') _createRole(message);
+
+    if (command == 'delrole') deleteRole(message);
+
+    if (command == 'renrole') renameRole(message);
+
+    if (command == 'warn') warnMember(message);
+
+    if (command == 'bulkdm') bulkDM(message);
+
+    if (command == 'purge') purge(message);
+
+    if (command == 'translate') translator(message);
+
+    if (command == 'say') say(message);
+
+    if (command == 'weather') findWeather(message);
+
 });
 
 
@@ -774,20 +792,20 @@ function bulkDM(message) {
 
 function findWeather(message) {
     // Separate the city name from unit
-    const city = args.splice(0,args.length-1).join('');
+    const city = args.splice(0, args.length - 1).join('');
     if (!city)
         return message.channel.send('**Please provide a valid city name with country code and preferred temperature unit (celsius/fahrenheit) in the syntax: <city>, <country> <unit></unit>**');
     // Set unit as metric or imperial
     const unit = args[0].toUpperCase() == 'C' ? 'metric' : 'imperial';
     // Also keep another variable for displaying unit in results
     const _unit = args[0].toUpperCase();
-    const appID = config.appID;    
+    const appID = config.appID;
     const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${appID}`;
     let data;
-    try{
-        data = justGetJSON(url);        
+    try {
+        data = justGetJSON(url);
     }
-    catch(e){
+    catch (e) {
         message.channel.send(e);
     }
 
@@ -819,5 +837,5 @@ function findWeather(message) {
                 }
             ]
         }
-    });    
+    });
 }

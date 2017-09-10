@@ -89,5 +89,12 @@
         "command": "++weather",
         "syntax": "++weather <location w/out country code> <temperatureUnit (C/F)>",
         "example": "++weather new york c"
+    },
+    {
+        "name": "Support",
+        "description": "Request support from official Terone staff",
+        "command": "++contactsupport",
+        "syntax": "<++contactsupport>",
+        "example": "++contactsupport"
     }
 ]

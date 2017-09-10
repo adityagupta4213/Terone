@@ -6,6 +6,7 @@ const justGetJSON = require('just-get-json');
 const badwords = require('badwords/array');
 const config = require('./config.json');
 const help = require('./help.json');
+const staff = config.staff;
 const bot = new Discord.Client();
 const app = apiai(config.apiaiToken);
 const prefix = config.prefix;
@@ -23,6 +24,9 @@ bot.on('ready', () => {
     bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } });
 });
 
+//
+// Create required channels
+//
 function initialize(message) {
     if (!message.member.hasPermission(['MANAGE_CHANNELS']))
         return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`);
@@ -134,7 +138,7 @@ bot.on('message', message => {
                 color: yellow,
                 description: 'You need to [add me to a server](https://discordapp.com/oauth2/authorize?client_id=356369928426749952&scope=bot&permissions=1007119423) for any of my commands to work mate!',
             }
-        });   
+        });
     if (command == 'init') initialize(message);
 
     if (command == 'kick') kick(message);
@@ -152,6 +156,8 @@ bot.on('message', message => {
     if (command == 'renrole') renameRole(message);
 
     if (command == 'warn') warnMember(message);
+
+    if (command == 'contactsupport') contactSupport(message);
 
     if (command == 'bulkdm') bulkDM(message);
 
@@ -215,6 +221,12 @@ bot.on('presenceUpdate', (oldMember, newMember) => {
 //
 bot.on('guildMemberAdd', member => {
     let _member = member;
+    // If the joined user is a support staff, welcome them
+    for (let i in staff){
+        if (_member.id == staff[i].userID){
+            welcomeOfficial(_member);
+        }
+    }
     try {
         _member.guild.channels.find('name', 'welcome').send({
             embed: {
@@ -244,7 +256,6 @@ bot.on('guildMemberAdd', member => {
     catch (e) {
         console.log(e);
     }
-
 });
 bot.on('guildMemberRemove', member => {
     let _member = member;
@@ -372,7 +383,7 @@ function purge(message) {
     // This command removes all messages from all users in the channel, up to 100.
 
     // Get the delete count + the command itself
-    const deleteCount = args[0] + 1;
+    const deleteCount = args[0];
 
     if (!deleteCount || deleteCount < 2 || deleteCount > 100)
         return message.reply('Please provide a number between 2 and 100 for the number of messages to delete');
@@ -803,6 +814,9 @@ function bulkDM(message) {
     }
 }
 
+//
+// Displays weather of any given city
+//
 function findWeather(message) {
     // Separate the city name from unit
     const city = args.splice(0, args.length - 1).join('');
@@ -852,17 +866,114 @@ function findWeather(message) {
         }
     });
 }
-// Under development
+
+//
+// Sends help in DM to user
+// Pending UI changes
 function _help(message) {
     for (let i in help) {
-        message.author.send(`
-            ${message.author} \n
-            **${help[i].name}** \n
-            \t__*Description*__: **${help[i].description}** \n
-            \t__*Command*__: **${help[i].command}** \n
-            \t__*Syntax*__:  **${help[i].syntax}** \n
-            \t__*Example*__:  **${help[i].example}** \n
-            `
-        );
+        message.author.send({
+            embed: {
+                color: blue,
+                description: `${help[i].description}`,
+                author: {
+                    name: `${help[i].name}`
+                },
+                fields: [
+                    {
+                        "name": "Syntax",
+                        "value": `\`\`\`${help[i].syntax}\`\`\``
+                    },
+                    {
+                        "name": "Example",
+                        "value": `\`\`\`${help[i].example}\`\`\``
+                    }
+                ]
+            }
+        });
     }
+    message.channel.send({
+        embed: {
+            color: blue,
+            description: `${message.author}, have a look at your inbox.`
+        }
+    })
+}
+
+//
+// Sends a server invite to Terone staff members requesting support
+//
+function contactSupport(message) {
+    message.channel.createInvite({ maxAge: 0 }).then((invite) => {
+        for (let i in staff){
+            bot.fetchUser(staff[i].userID).then((user) => {
+                sendSupportRequest(user, invite);
+            });
+        }
+    });
+
+    message.channel.send(`I will call my support staff to heed to your issue ASAP.`);
+
+    function sendSupportRequest(user, invite){
+        user.send({
+            embed: {
+                color: blue,
+                description: `A user has requested staff support`,
+                author: {
+                    name: `SUPPORT REQUEST`
+                },
+                fields: [
+                    {
+                        "name": "Name",
+                        "value": `${message.author}`
+                    },
+                    {
+                        "name": "Server",
+                        "value": `${message.guild.name}`
+                    },
+                    {
+                        "name": "Invite",
+                        "value": `${invite}`
+                    }
+                ]
+            }
+        });
+    }
+}
+
+//
+// Welcomes the staff members when they join a server for support
+//
+
+function welcomeOfficial(official){
+    let role;
+    // Find the staff official's role
+    for (let i in staff){
+        if (staff[i].userID == official.user.id){
+            role = staff[i].role;
+        }
+    }
+    official.guild.channels.find('name', 'general').send({
+        embed:{
+            color: blue,
+            description: `An official support staff has joined the server`,
+            author:{
+                name: 'SUPPORT STAFF JOINED'
+            },
+            thumbnail:{
+                icon: official.user.avatarURL
+            },
+            fields:[
+                {
+                    'name': 'Name',
+                    'value': `${official.user}`
+                },
+                {
+                    'name': 'Role',
+                    'value': `${role}`
+                }
+            ]
+            
+        }
+    });
 }

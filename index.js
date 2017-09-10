@@ -24,7 +24,6 @@ bot.on('ready', () => {
 
 
 bot.on('message', message => {
-
     // If the user is a bot itself, don't do anything in order to prevet unwanted loops
     if (message.author.bot) return;
     // Ignore anything that doesn't have the prefix or bot mentioned
@@ -598,18 +597,18 @@ function _createRole(message) {
         return message.reply('**Please enter a valid role name**');
     if (!color)
         color = 'DEFAULT';
-    else  
+    else
         color.toUpperCase();
     message.guild.createRole({
         name, color, mentionable: true
     })
-    .then(log())
-    .catch((e) => message.channel.send(e));
+        .then(log())
+        .catch((e) => message.channel.send(e));
 
 
     // Send the log message to server-log
     function log() {
-        message.guild.channels.find('name','server-log').send({
+        message.guild.channels.find('name', 'server-log').send({
             embed: {
                 color: blue,
                 description: `Role **${name}** created by ${message.author}`,
@@ -831,22 +830,16 @@ function findWeather(message) {
     });
 }
 // Under development
-function _help(message){
-    for (let i in help){
-        if (help.hasOwnProperty(i)){
-            for (let j in help[i]){
-                if (help[i].hasOwnProperty(j)){
-                    message.author.send(
-                        `**${help[i]}** \n
-                        \t __${help[i][j]}__ \n
-                        \t \t *Name*: **${help[i][j].name}** \n
-                        \t \t *Description*: **${help[i][j].description}** \n
-                        \t \t *Command*: **${help[i][j].command}** \n
-                        \t \t *Syntax*:  **${help[i][j].syntax}** \n
-                        \t \t *Example*:  **${help[i][j].example}** \n                        `
-                    );
-                }
-            }
-        }
+function _help(message) {
+    for (let i in help) {
+        message.author.send(`
+            ${message.author} \n
+            **${help[i].name}** \n
+            \t__*Description*__: **${help[i].description}** \n
+            \t__*Command*__: **${help[i].command}** \n
+            \t__*Syntax*__:  **${help[i].syntax}** \n
+            \t__*Example*__:  **${help[i].example}** \n
+            `
+        );
     }
 }

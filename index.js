@@ -9,6 +9,7 @@ const help = require('./help.json');
 const bot = new Discord.Client();
 const app = apiai(config.apiaiToken);
 const prefix = config.prefix;
+const greetings = ['Hey there', 'Hi', 'Hello', 'Howdy'];
 const requiredChannels = ['welcome', 'member-log', 'terone-log', 'server-log'];
 const green = 0x42f474, red = 0xf44542, blue = 3447003, yellow = 0xffeb3b, grey = 0x747F8D;
 let args, command, profanity = false;
@@ -22,6 +23,25 @@ bot.on('ready', () => {
     bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } });
 });
 
+function initialize(message) {
+    if (!message.member.hasPermission(['MANAGE_CHANNELS']))
+        return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`);
+
+    const guild = message.guild;
+    let error, didInit = false;
+    for (let i in requiredChannels) {
+
+        if (!guild.channels.exists('name', requiredChannels[i])) {
+            guild.createChannel(requiredChannels[i], 'text')
+                .then(didInit = true)
+                .catch((e) => { didInit = false; error = e });
+        }
+    }
+    if (didInit)
+        return message.reply(`Initialization complete!`);
+    else
+        return message.reply(`Couldn't initialize due to ${error.message}`);
+}
 
 bot.on('message', message => {
     // If the user is a bot itself, don't do anything in order to prevet unwanted loops
@@ -107,7 +127,15 @@ bot.on('message', message => {
         request.end();
     }
 
-
+    // Only run these commands if the bot is in a server. Not in a DM
+    if (!message.guild && message.content.indexOf(prefix) !== -1)
+        return message.channel.send({
+            embed: {
+                color: yellow,
+                description: 'You need to [add me to a server](https://discordapp.com/oauth2/authorize?client_id=356369928426749952&scope=bot&permissions=1007119423) for any of my commands to work mate!',
+            }
+        });   
+    if (command == 'init') initialize(message);
 
     if (command == 'kick') kick(message);
 
@@ -244,11 +272,6 @@ bot.on('guildMemberRemove', member => {
 // Server join log
 //
 bot.on('guildCreate', guild => {
-    for (let i in requiredChannels) {
-        if (!guild.channels.exists('name', requiredChannels[i])) {
-            guild.createChannel(requiredChannels[i], 'text');
-        }
-    }
     bot.channels.find('name', 'terone-log').send({
         embed: {
             color: 3447003,
@@ -348,13 +371,13 @@ function purge(message) {
         return message.channel.send(`${message.author} Don't try to remove evidence :D ! You don't have the permissions to manage messages`);
     // This command removes all messages from all users in the channel, up to 100.
 
-    // Get the delete count
-    const deleteCount = args[0];
+    // Get the delete count + the command itself
+    const deleteCount = args[0] + 1;
 
     if (!deleteCount || deleteCount < 2 || deleteCount > 100)
         return message.reply('Please provide a number between 2 and 100 for the number of messages to delete');
 
-    // Get messages and delete them.
+    // Get messages and delete them
     message.channel.fetchMessages({ limit: deleteCount })
         .then(messages => message.channel.bulkDelete(messages))
         .catch(error => message.reply(`Couldn't delete messages because of: ${error}`));

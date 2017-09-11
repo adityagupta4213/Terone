@@ -91,10 +91,17 @@
         "example": "++weather new york c"
     },
     {
-        "name": "Support",
+        "name": "Contact Support",
         "description": "Request support from official Terone staff",
         "command": "++contactsupport",
         "syntax": "<++contactsupport>",
         "example": "++contactsupport"
+    },
+    {
+        "name": "Cancel Support",
+        "description": "Cancel support request",
+        "command": "++cancelsupport",
+        "syntax": "<++cancelsupport>",
+        "example": "++cancelsupport"
     }
 ]

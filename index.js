@@ -27,11 +27,17 @@ bot.on('ready', () => {
 //
 // Create required channels
 //
-function initialize(message) {
+function initialize(message, _guild) {
     if (!message.member.hasPermission(['MANAGE_CHANNELS']))
         return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`);
+    // If the command was initialized from a user, find the guild. Else just use the guild from where Terone executed the command    
+    let guild;
+    if (_guild !== 0)
+        guild = _guild;
+    else if (message !== 0 && _guild == 0)
+        guild = message.guild;
 
-    const guild = message.guild;
+
     let error, didInit = false;
     for (let i in requiredChannels) {
 
@@ -69,38 +75,9 @@ bot.on('message', message => {
 
     // Separate command from args
     separateCommand(message);
+    // Check for profanity
+    checkProfanity(message);
 
-    //
-    // General greetings //
-    //
-
-    // Convert to lowercase in order to deal with all variations of spellings
-
-    //
-    // Check for vulgar comments
-    //
-    _message = message.content.toLowerCase();
-    for (let i in badwords) {
-        if (_message.search(badwords[i]) !== -1) {
-            profanity = true;
-            message.delete();
-            message.channel.send({
-                embed: {
-                    color: red,
-                    description: `No profanity ${message.author}!`,
-                    thumbnail: {
-                        url: message.author.avatarURL
-                    },
-                    author: {
-                        name: 'PROFANITY DETECTED'
-                    }
-                }
-            });
-            break;
-        }
-        else
-            profanity = false;
-    }
 
     ////////// AI CONVERSATIONAL AGENT IS CURRENTLY UNDER TRAINING //////////
     if (message.content.indexOf(prefix) == -1 && !profanity) {
@@ -139,7 +116,7 @@ bot.on('message', message => {
                 description: 'You need to [add me to a server](https://discordapp.com/oauth2/authorize?client_id=356369928426749952&scope=bot&permissions=1007119423) for any of my commands to work mate!',
             }
         });
-    if (command == 'init') initialize(message);
+    if (command == 'init') initialize(message, 0);
 
     if (command == 'kick') kick(message);
 
@@ -158,6 +135,8 @@ bot.on('message', message => {
     if (command == 'warn') warnMember(message);
 
     if (command == 'contactsupport') contactSupport(message);
+
+    if (command == 'cancelsupport') cancelSupport(message);
 
     if (command == 'bulkdm') bulkDM(message);
 
@@ -180,14 +159,15 @@ bot.on('message', message => {
 bot.on('presenceUpdate', (oldMember, newMember) => {
     if (oldMember.presence.status !== newMember.presence.status) {
         if (newMember.presence.status == 'online') {
-            let index = Math.floor(Math.random() * 3);
+            // Greeting users in the General channel has been disabled
+            /*let index = Math.floor(Math.random() * 3);
             // So that each instance sends message to its own server instead of every server
             try {
                 newMember.guild.channels.find('name', 'general').send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`);
             }
             catch (e) {
                 console.log(e);
-            }
+            }*/
         }
         const colors = {
             online: green,
@@ -222,8 +202,8 @@ bot.on('presenceUpdate', (oldMember, newMember) => {
 bot.on('guildMemberAdd', member => {
     let _member = member;
     // If the joined user is a support staff, welcome them
-    for (let i in staff){
-        if (_member.id == staff[i].userID){
+    for (let i in staff) {
+        if (_member.id == staff[i].userID) {
             welcomeOfficial(_member);
         }
     }
@@ -283,6 +263,13 @@ bot.on('guildMemberRemove', member => {
 // Server join log
 //
 bot.on('guildCreate', guild => {
+    try{
+        // Init the guild with no message (auto initialization)
+        initialize(0, guild);
+    }
+    catch(e){
+        message.reply(`An error occurred while initialization. Please check if I have required permissions. Error: ${e}`);
+    }
     bot.channels.find('name', 'terone-log').send({
         embed: {
             color: 3447003,
@@ -369,9 +356,48 @@ function separateCommand(message) {
     // Separate the command from the arguments
     command = args.shift().toLowerCase();
 
+    for (let i in args){
+        if (args[i].indexOf('++') !== -1){
+            args = 0;
+            command = 0;
+            return message.reply('Command chaining is not allowed');
+        }
+    }
+
     console.log('command: ', command, 'args: ', args);
 }
 
+//
+// Check for vulgar comments
+//
+function checkProfanity(message) {
+    _message = message.content.toLowerCase();
+    _message = _message.split(' ');
+    for (let i in _message) {
+        for (let j in badwords) {
+            if (_message[i] == badwords[j]) {
+                console.log(_message[i]);
+                profanity = true;
+                message.delete();
+                message.channel.send({
+                    embed: {
+                        color: red,
+                        description: `No profanity ${message.author}!`,
+                        thumbnail: {
+                            url: message.author.avatarURL
+                        },
+                        author: {
+                            name: 'PROFANITY DETECTED'
+                        }
+                    }
+                });
+                break;
+            }
+            else
+                profanity = false;
+        }
+    }
+}
 
 //
 // Purge //
@@ -536,6 +562,8 @@ function ban(message) {
 // Same logic as translator for separating message
 //
 function say(message) {
+    if (profanity)
+        return;
     let _message = [];
     for (let i = 0; i < args.length; i++) {
         _message[i] = args[i];
@@ -836,11 +864,14 @@ function findWeather(message) {
         message.channel.send(e);
     }
 
+    if (!data.name)
+        return message.reply(`**Enter a valid city name please!**`);
     const cityName = data.name;
     const countryCode = data.sys.country;
     const temp = data.main.temp;
     const condition = data.weather[0].main;
     const humidity = data.main.humidity;
+
 
     message.channel.send({
         embed: {
@@ -905,75 +936,101 @@ function _help(message) {
 //
 function contactSupport(message) {
     message.channel.createInvite({ maxAge: 0 }).then((invite) => {
-        for (let i in staff){
+        for (let i in staff) {
             bot.fetchUser(staff[i].userID).then((user) => {
-                sendSupportRequest(user, invite);
+                // Send support request
+                user.send({
+                    embed: {
+                        color: blue,
+                        description: `A user has requested staff support`,
+                        author: {
+                            name: `SUPPORT REQUEST`
+                        },
+                        fields: [
+                            {
+                                "name": "Name",
+                                "value": `${message.author}`
+                            },
+                            {
+                                "name": "Server",
+                                "value": `${message.guild.name}`
+                            },
+                            {
+                                "name": "Invite",
+                                "value": `${invite}`
+                            }
+                        ]
+                    }
+                });
             });
         }
     });
 
-    message.channel.send(`I will call my support staff to heed to your issue ASAP.`);
+    message.channel.send(`I've requested my staff to attend your issue. To canel the request, type ++cancelsupport.`);
 
-    function sendSupportRequest(user, invite){
-        user.send({
-            embed: {
-                color: blue,
-                description: `A user has requested staff support`,
-                author: {
-                    name: `SUPPORT REQUEST`
-                },
-                fields: [
-                    {
-                        "name": "Name",
-                        "value": `${message.author}`
-                    },
-                    {
-                        "name": "Server",
-                        "value": `${message.guild.name}`
-                    },
-                    {
-                        "name": "Invite",
-                        "value": `${invite}`
-                    }
-                ]
-            }
-        });
-    }
 }
 
 //
 // Welcomes the staff members when they join a server for support
 //
 
-function welcomeOfficial(official){
+function welcomeOfficial(official) {
     let role;
     // Find the staff official's role
-    for (let i in staff){
-        if (staff[i].userID == official.user.id){
+    for (let i in staff) {
+        if (staff[i].userID == official.user.id) {
             role = staff[i].role;
         }
     }
     official.guild.channels.find('name', 'general').send({
-        embed:{
+        embed: {
             color: blue,
             description: `An official support staff has joined the server`,
-            author:{
+            author: {
                 name: 'SUPPORT STAFF JOINED'
             },
-            thumbnail:{
-                icon: official.user.avatarURL
+            thumbnail: {
+                icon_url: official.user.avatarURL
             },
-            fields:[
+            fields: [
                 {
                     'name': 'Name',
-                    'value': `${official.user}`
+                    'value': `${official.user.username}`
                 },
                 {
                     'name': 'Role',
                     'value': `${role}`
                 }
             ]
-            
+
         }
     });
+}
+
+function cancelSupport(message) {
+    for (let i in staff) {
+        bot.fetchUser(staff[i].userID).then((user) => {
+            // Send support request
+            user.send({
+                embed: {
+                    color: blue,
+                    description: `A user has cancelled staff support request`,
+                    author: {
+                        name: `SUPPORT REQUEST CANCELLED`
+                    },
+                    fields: [
+                        {
+                            "name": "Name",
+                            "value": `${message.author}`
+                        },
+                        {
+                            "name": "Server",
+                            "value": `${message.guild.name}`
+                        }
+                    ]
+                }
+            });
+        });
+    }
+    message.channel.send(`${message.author} Your request has been cancelled`);
 }

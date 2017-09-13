@@ -28,56 +28,99 @@ bot.on('ready', () => {
 // Create required channels
 //
 function initialize(message, _guild) {
-    if (!message.member.hasPermission(['MANAGE_CHANNELS']))
+    if (message && !message.member.hasPermission(['MANAGE_CHANNELS']))
         return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`);
     // If the command was initialized from a user, find the guild. Else just use the guild from where Terone executed the command    
     let guild;
-    if (_guild !== 0)
+    if (_guild && !message)
         guild = _guild;
-    else if (message !== 0 && _guild == 0)
+    else if (message && !_guild)
         guild = message.guild;
 
 
-    let error, didInit = false;
+    let error, didInit = true;
     for (let i in requiredChannels) {
-
         if (!guild.channels.exists('name', requiredChannels[i])) {
-            guild.createChannel(requiredChannels[i], 'text')
-                .then(didInit = true)
-                .catch((e) => { didInit = false; error = e });
+            try {
+                guild.createChannel(requiredChannels[i], 'text');
+                didInit = true;
+            }
+            catch (e) {
+                console.log(e);
+                didInit = false;
+                error = e;
+            }
         }
     }
-    if (didInit)
+    // If initialized by message
+    if (didInit && message)
         return message.reply(`Initialization complete!`);
+    // If initialized without message
+    else if (didInit && !message)
+        return guild.channels.find('name', 'general').send(`Initialization complete!`);
+    // If initialization by message failed
+    else if (!didInit && message)
+        return message.reply(`Initialization failed!`);
+    // If automatic initialization failed
     else
-        return message.reply(`Couldn't initialize due to ${error.message}`);
+        return guild.channels.find('name', 'general').send({
+            embed: {
+                color: red,
+                description: '**Automatic initialization failed. Please provide me administrative permissions and run the following command.**',
+                author: {
+                    name: 'INITIALIZATION ERROR'
+                },
+                fields: [
+                    {
+                        'name': 'Command',
+                        'value': '++init'
+                    },
+                    {
+                        'name': 'Explanation',
+                        'value': 'Type the above command in order to perform a crucial initialization process of creating some required channels.'
+                    }
+                ]
+            }
+        });
 }
 
 bot.on('message', message => {
     // If the user is a bot itself, don't do anything in order to prevet unwanted loops
     if (message.author.bot) return;
     // Ignore anything that doesn't have the prefix or bot mentioned
-    if (!message.isMentioned(bot.user) && message.content.indexOf(prefix) !== 0) return;
-
 
     //
     // HTTP auto prefixing
     //
-    // If message has 'www.' 
-    let url = message.content.match(/\bwww\.\S+/gi);
-    if (url) {
+    // If message has 'www.' and does not have 'http', push it to the url array
+    let url = [];
+    // If multiword sentence, split words else don't
+    let _message = message.content.split(' ');
+    if (!_message)
+        url.push(message.content);
+    for (let i in _message) {
+        if (_message[i].indexOf('www') !== -1 && _message[i].indexOf('http') == -1) {
+            console.log(_message[i]);
+            url.push(message[i]);
+        }
+    }
+
+    // If the url array is not empty
+    if (url[0]) {
+        console.log(url);
         message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here are the corrected ones:`);
         for (let i in url) {
             message.channel.send(`http://${url[i]}`);
         }
     }
+    if (!message.isMentioned(bot.user) && message.content.indexOf(prefix) !== 0)
+        return;
 
 
     // Separate command from args
     separateCommand(message);
     // Check for profanity
     checkProfanity(message);
-
 
     ////////// AI CONVERSATIONAL AGENT IS CURRENTLY UNDER TRAINING //////////
     if (message.content.indexOf(prefix) == -1 && !profanity) {
@@ -118,37 +161,39 @@ bot.on('message', message => {
         });
     if (command == 'init') initialize(message, 0);
 
-    if (command == 'kick') kick(message);
+    else if (command == 'kick') kick(message);
 
-    if (command == 'ban') ban(message);
+    else if (command == 'ban') ban(message);
 
-    if (command == 'createchannel') createChannel(message);
+    else if (command == 'createchannel') createChannel(message);
 
-    if (command == 'delchannel') deleteChannel(message);
+    else if (command == 'delchannel') deleteChannel(message);
 
-    if (command == 'createrole') _createRole(message);
+    else if (command == 'createrole') _createRole(message);
 
-    if (command == 'delrole') deleteRole(message);
+    else if (command == 'delrole') deleteRole(message);
 
-    if (command == 'renrole') renameRole(message);
+    else if (command == 'renrole') renameRole(message);
 
-    if (command == 'warn') warnMember(message);
+    else if (command == 'warn') warnMember(message);
 
-    if (command == 'contactsupport') contactSupport(message);
+    else if (command == 'contactsupport') contactSupport(message);
 
-    if (command == 'cancelsupport') cancelSupport(message);
+    else if (command == 'cancelsupport') cancelSupport(message);
 
-    if (command == 'bulkdm') bulkDM(message);
+    else if (command == 'bulkdm') bulkDM(message);
 
-    if (command == 'help') _help(message);
+    else if (command == 'help') _help(message);
 
-    if (command == 'purge') purge(message);
+    else if (command == 'purge') purge(message);
 
-    if (command == 'translate') translator(message);
+    else if (command == 'translate') translator(message);
 
-    if (command == 'say') say(message);
+    else if (command == 'say') say(message);
 
-    if (command == 'weather') findWeather(message);
+    else if (command == 'weather') findWeather(message);
+
+    else if (!message.isMentioned(bot.user)) return message.reply('This doesn\'t seem like a valid command. Does it?');
 
 });
 
@@ -213,7 +258,7 @@ bot.on('guildMemberAdd', member => {
                 color: blue,
                 description: `**Welcome** ${_member.user}! You are the ${_member.guild.memberCount + 1}th member!`,
                 thumbnail: {
-                    url: bot.user.avatarURL
+                    url: _member.user.avatarURL
                 },
                 author: {
                     name: 'WELCOME'
@@ -244,9 +289,6 @@ bot.on('guildMemberRemove', member => {
             embed: {
                 color: red,
                 description: `${_member.user} has left the server`,
-                thumbnail: {
-                    url: bot.user.avatarURL
-                },
                 author: {
                     name: 'MEMBER LEFT'
                 }
@@ -263,14 +305,14 @@ bot.on('guildMemberRemove', member => {
 // Server join log
 //
 bot.on('guildCreate', guild => {
-    try{
+    try {
         // Init the guild with no message (auto initialization)
         initialize(0, guild);
     }
-    catch(e){
+    catch (e) {
         message.reply(`An error occurred while initialization. Please check if I have required permissions. Error: ${e}`);
     }
-    bot.channels.find('name', 'terone-log').send({
+    bot.channels.find('id', config.teroneLog).send({
         embed: {
             color: 3447003,
             description: `Terone is now a member of **${guild.name}**`,
@@ -306,7 +348,7 @@ bot.on('guildCreate', guild => {
 // Server leave log
 //
 bot.on('guildDelete', guild => {
-    bot.channels.find('name', 'terone-log').send({
+    bot.channels.find('id', config.teroneLog).send({
         embed: {
             color: red,
             description: `Terone is no longer a member of **${guild.name}**`,
@@ -356,11 +398,11 @@ function separateCommand(message) {
     // Separate the command from the arguments
     command = args.shift().toLowerCase();
 
-    for (let i in args){
-        if (args[i].indexOf('++') !== -1){
+    for (let i in args) {
+        if (args[i].indexOf('++') !== -1) {
             args = 0;
             command = 0;
-            return message.reply('Command chaining is not allowed');
+            return message.reply('you cannot use multiple commands at once.');
         }
     }
 
@@ -573,8 +615,8 @@ function say(message) {
         embed: {
             color: green,
             description: `${_message}`,
-            thumbnail: {
-                url: bot.user.avatarURL
+            author: {
+                iconUrl: bot.user.avatarURL
             }
         }
     });
@@ -757,6 +799,10 @@ function warnMember(message) {
     let reason = args[1];
     let member = message.mentions.members.first();
 
+    if (!member)
+        return message.channel.send(`${message.author}, please mention the name of the member to warn`);
+    if (member.user == message.author)
+        return message.channel.send(`${message.author}, you can't warn yourself mate :D`);
     if (!reason)
         return message.channel.send(`${message.author}, please provide a reason for the warning`);
 
@@ -766,7 +812,7 @@ function warnMember(message) {
             description: `${member} has been warned by ${message.author} for **${reason}**`,
             author: {
                 name: 'WARNING',
-                icon_url: message.author.avatarURL
+                iconURL: message.author.avatarURL
             },
             thumbnail: {
                 url: member.user.avatarURL
@@ -778,7 +824,7 @@ function warnMember(message) {
         embed: {
             color: yellow,
             author: {
-                icon_url: message.author.avatarURL
+                iconURL: message.author.avatarURL
             },
             fields: [
                 {
@@ -807,38 +853,77 @@ function bulkDM(message) {
     // Declare an empty message array to push the message strings into later on
     let _message = [];
 
-    // Untill a word starts with < (mention) keep adding it to the message
+    // Untill a word starts with < (mention) or @everyone, keep adding it to the message
     for (let i in args) {
-        if (args[i].indexOf('<') == -1)
+        if (args[i].indexOf('<') == -1 && args[i].indexOf('@') == -1)
             _message.push(args[i])
     }
     _message = _message.join(' ');
 
     // Get the snowflake separated 
     let users = args.splice(1, args.length);
-    // Find every user in the array and sent them the message
-    try {
-        for (let i in users) {
+    let isEveryoneMentioned = false;
+
+    // If everyone is mentioned, find every member of the guild and push their user ID to users array
+    if (users[0] == '@everyone') {
+        isEveryoneMentioned = true;
+        message.guild.fetchMembers().then(guild => {
+            users = guild.members.keyArray();
+            sendMsg(users);
+        });
+    }
+    // Only separate IDs from mentions if @everyone is not mentioned
+    if (!isEveryoneMentioned){
+        for (let i in users)
             users[i] = users[i].split('').splice(2, users[i].length - 3).join('');
-            bot.fetchUser(users[i]).then(user => user.send({
+        sendMsg(users);
+    }
+    // Find every user in the array and sent them the message
+    function sendMsg(users) {
+        try {
+            for (let i in users) {
+                bot.fetchUser(users[i]).then(user => {
+                    user.send({
+                        embed: {
+                            color: blue,
+                            description: `You've received a message from the administrator`,
+                            author: {
+                                name: 'DM from Administrator'
+                            },
+                            fields: [
+                                {
+                                    name: 'Server',
+                                    value: `${message.guild.name}`
+                                },
+                                {
+                                    name: 'Message',
+                                    value: `${_message}`
+                                },
+                                {
+                                    name: 'Time',
+                                    value: `${new Date(message.createdTimestamp)}`
+                                },
+                            ]
+                        }
+                    });
+                });
+            }
+            message.guild.channels.find('name', 'server-log').send({
                 embed: {
                     color: blue,
-                    description: `${_message}`,
-                    author: {
-                        name: 'DM from Administrator'
-                    }
+                    description: `Bulk DM sent successfully`
                 }
-            }));
-            message.guild.channels.find('name', 'server-log').send({
+            });
+            message.channel.send({
                 embed: {
                     color: blue,
                     description: `Bulk DM sent successfully`
                 }
             })
         }
-    }
-    catch (e) {
-        console.log(e);
+        catch (e) {
+            console.log(e);
+        }
     }
 }
 
@@ -846,6 +931,11 @@ function bulkDM(message) {
 // Displays weather of any given city
 //
 function findWeather(message) {
+    const loadingLine = 'Loading weather';
+    message.channel.send(`${loadingLine}`);
+    while (!data) {
+
+    }
     // Separate the city name from unit
     const city = args.splice(0, args.length - 1).join('');
     if (!city)
@@ -857,6 +947,7 @@ function findWeather(message) {
     const appID = config.appID;
     const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${appID}`;
     let data;
+
     try {
         data = justGetJSON(url);
     }
@@ -990,7 +1081,7 @@ function welcomeOfficial(official) {
                 name: 'SUPPORT STAFF JOINED'
             },
             thumbnail: {
-                icon_url: official.user.avatarURL
+                url: official.user.avatarURL
             },
             fields: [
                 {

@@ -36,10 +36,10 @@
     },
     {
         "name": "Bulk DM",
-        "description": "Send the same message to multiple members of the server as a direct message",
+        "description": "Send the same message to multiple members (or every member) of the server as a direct message",
         "command": "++bulkdm",
-        "syntax": "++bulkdm <@memberMention>",
-        "example": "++bulkdm @member1 @member2 @member5 Howdy!"
+        "syntax": "++bulkdm <message> <@memberMention>",
+        "example": "++bulkdm Howdy! @member1 @member2 @member5 \n ++bulkdm Howdy! @everyone"
     },
     {
         "name": "Kick Member",

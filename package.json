@@ -12,5 +12,8 @@
     "discord.js": "^11.1.0",
     "google-translate-api": "^2.3.0",
     "iso-language-converter": "^1.1.0"
+  },
+  "devDependencies": {
+    "standard": "^10.0.3"
   }
 }

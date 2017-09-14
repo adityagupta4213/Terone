@@ -1,1127 +1,1224 @@
-const Discord = require('discord.js');
-const apiai = require('apiai');
-const translate = require('google-translate-api');
-const isoConv = require('iso-language-converter');
-const justGetJSON = require('just-get-json');
-const badwords = require('badwords/array');
-const config = require('./config.json');
-const help = require('./help.json');
-const staff = config.staff;
-const bot = new Discord.Client();
-const app = apiai(config.apiaiToken);
-const prefix = config.prefix;
-const greetings = ['Hey there', 'Hi', 'Hello', 'Howdy'];
-const requiredChannels = ['welcome', 'member-log', 'terone-log', 'server-log'];
-const green = 0x42f474, red = 0xf44542, blue = 3447003, yellow = 0xffeb3b, grey = 0x747F8D;
-let args, command, profanity = false;
+const Discord = require('discord.js')
+const apiai = require('apiai')
+const translate = require('google-translate-api')
+const isoConv = require('iso-language-converter')
+const justGetJSON = require('just-get-json')
+const badwords = require('badwords/array')
+const config = require('./config.json')
+const help = require('./help.json')
+const staff = config.staff
+const bot = new Discord.Client()
+const app = apiai(config.apiaiToken)
+const prefix = config.prefix
+// const greetings = ['Hey there', 'Hi', 'Hello', 'Howdy']
+const requiredChannels = ['welcome', 'member-log', 'terone-log', 'server-log']
+const colors = {
+  green: 0x42f474,
+  red: 0xf44542,
+  blue: 3447003,
+  yellow: 0xffeb3b,
+  grey: 0x747F8D
+}
+let args; let command; let profanity = false
 
+bot.login(config.token)
 
 //
 // Server count as current game
 //
 bot.on('ready', () => {
-    console.log('Online!');
-    bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } });
-});
+  console.log('Online!')
+  bot.user.setPresence({ game: { name: `on ${bot.guilds.size} servers`, type: 0 } })
+})
 
 //
 // Create required channels
 //
-function initialize(message, _guild) {
-    if (message && !message.member.hasPermission(['MANAGE_CHANNELS']))
-        return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`);
-    // If the command was initialized from a user, find the guild. Else just use the guild from where Terone executed the command    
-    let guild;
-    if (_guild && !message)
-        guild = _guild;
-    else if (message && !_guild)
-        guild = message.guild;
+function initialize (message, _guild) {
+  if (message && !message.member.hasPermission(['MANAGE_CHANNELS'])) {
+    return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`)
+  }
+  // If the command was initialized from a user, find the guild. Else just use the guild from where Terone executed the command
+  let guild
+  if (_guild && !message) {
+    guild = _guild
+  } else if (message && !_guild) {
+    guild = message.guild
+  }
 
-
-    let error, didInit = true;
-    for (let i in requiredChannels) {
-        if (!guild.channels.exists('name', requiredChannels[i])) {
-            try {
-                guild.createChannel(requiredChannels[i], 'text');
-                didInit = true;
-            }
-            catch (e) {
-                console.log(e);
-                didInit = false;
-                error = e;
-            }
-        }
+  let didInit = true
+  for (let i in requiredChannels) {
+    if (!guild.channels.exists('name', requiredChannels[i])) {
+      try {
+        guild.createChannel(requiredChannels[i], 'text')
+        didInit = true
+      } catch (e) {
+        console.log(e)
+        didInit = false
+      }
     }
-    // If initialized by message
-    if (didInit && message)
-        return message.reply(`Initialization complete!`);
+  }
+  // If initialized by message
+  if (didInit && message) {
+    return message.reply(`Initialization complete!`)
+  } else if (didInit && !message) {
     // If initialized without message
-    else if (didInit && !message)
-        return guild.channels.find('name', 'general').send(`Initialization complete!`);
+    return guild.channels.find('name', 'general').send(`Initialization complete!`)
+  } else if (!didInit && message) {
     // If initialization by message failed
-    else if (!didInit && message)
-        return message.reply(`Initialization failed!`);
+    return message.reply(`Initialization failed!`)
+  } else {
     // If automatic initialization failed
-    else
-        return guild.channels.find('name', 'general').send({
-            embed: {
-                color: red,
-                description: '**Automatic initialization failed. Please provide me administrative permissions and run the following command.**',
-                author: {
-                    name: 'INITIALIZATION ERROR'
-                },
-                fields: [
-                    {
-                        'name': 'Command',
-                        'value': '++init'
-                    },
-                    {
-                        'name': 'Explanation',
-                        'value': 'Type the above command in order to perform a crucial initialization process of creating some required channels.'
-                    }
-                ]
-            }
-        });
+    return guild.channels.find('name', 'general').send({
+      embed: {
+        color: colors.red,
+        description: '**Automatic initialization failed. Please provide me administrative permissions and run the following command.**',
+        author: {
+          name: 'INITIALIZATION ERROR'
+        },
+        fields: [
+          {
+            'name': 'Command',
+            'value': '++init'
+          },
+          {
+            'name': 'Explanation',
+            'value': 'Type the above command in order to perform a crucial initialization process of creating some required channels.'
+          }
+        ]
+      }
+    })
+  }
 }
 
 bot.on('message', message => {
-    // If the user is a bot itself, don't do anything in order to prevet unwanted loops
-    if (message.author.bot) return;
-    // Ignore anything that doesn't have the prefix or bot mentioned
+  // If the user is a bot itself, don't do anything in order to prevet unwanted loops
+  if (message.author.bot) return
+  // Ignore anything that doesn't have the prefix or bot mentioned
 
-    //
-    // HTTP auto prefixing
-    //
-    // If message has 'www.' and does not have 'http', push it to the url array
-    let url = [];
-    // If multiword sentence, split words else don't
-    let _message = message.content.split(' ');
-    if (!_message)
-        url.push(message.content);
-    for (let i in _message) {
-        if (_message[i].indexOf('www') !== -1 && _message[i].indexOf('http') == -1) {
-            console.log(_message[i]);
-            url.push(message[i]);
-        }
+  //
+  // HTTP auto prefixing
+  //
+  // If message has 'www.' and does not have 'http', push it to the url array
+  let url = []
+  // If multiword sentence, split words else don't
+  let _message = message.content.split(' ')
+  if (!_message) {
+    url.push(message.content)
+  }
+  for (let i in _message) {
+    if (_message[i].indexOf('www') !== -1 && _message[i].indexOf('http') === -1) {
+      console.log(_message[i])
+      url.push(message[i])
     }
+  }
 
-    // If the url array is not empty
-    if (url[0]) {
-        console.log(url);
-        message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here are the corrected ones:`);
-        for (let i in url) {
-            message.channel.send(`http://${url[i]}`);
-        }
+  // If the url array is not empty
+  if (url[0]) {
+    console.log(url)
+    message.channel.send(`Looks like you made a typo in the URL ${message.author}. No issues, here are the corrected ones:`)
+    for (let i in url) {
+      message.channel.send(`http://${url[i]}`)
     }
-    if (!message.isMentioned(bot.user) && message.content.indexOf(prefix) !== 0)
-        return;
+  }
+  if (!message.isMentioned(bot.user) && message.content.indexOf(prefix) !== 0) return
 
+  // Separate command from args
+  separateCommand(message)
+  // Check for profanity
+  checkProfanity(message)
 
-    // Separate command from args
-    separateCommand(message);
-    // Check for profanity
-    checkProfanity(message);
+  // AI CONVERSATIONAL AGENT IS CURRENTLY UNDER TRAINING
+  if (message.content.indexOf(prefix) === -1 && !profanity) {
+    // Remove the bot mention from the message
+    let _message = message.content.split(' ').slice(1).join(' ')
+    // Generate a random session ID
+    let randomID = Math.floor(Math.random() * 9999)
+    // Call the agent
+    let request = app.textRequest(`${_message}`, { sessionId: randomID })
 
-    ////////// AI CONVERSATIONAL AGENT IS CURRENTLY UNDER TRAINING //////////
-    if (message.content.indexOf(prefix) == -1 && !profanity) {
-        // Remove the bot mention from the message
-        let _message = message.content.split(' ').slice(1).join(' ');
-        // Generate a random session ID
-        let randomID = Math.floor(Math.random() * 9999);
-        // Call the agent
-        let request = app.textRequest(`${_message}`, { sessionId: randomID });
+    request.on('response', function (response) {
+      // Log all responses.
+      console.log(response)
+      // Set response text equal to the output speech
+      let responseText = response.result.fulfillment.speech
+      // If response is not available, return default
+      if (!responseText) {
+        message.reply(`I'm afraid I don't have a reply to that. I'm trying to get better every day though`)
+      } else {
+        message.reply(`${responseText}`)
+      }
+    })
 
-        request.on('response', function (response) {
-            // Log all responses.
-            console.log(response);
-            // Set response text equal to the output speech. 
-            let responseText = response.result.fulfillment.speech;
-            // If response is not available, return default
-            if (!responseText)
-                message.reply(`I'm afraid I don't have a reply to that. I'm trying to get better every day though`);
-            else
-                message.reply(`${responseText}`);
-        });
+    request.on('error', function (error) {
+      console.log(error)
+    })
+    request.end()
+  }
 
-        request.on('error', function (error) {
-            console.log(error);
-        });
+  // Only run these commands if the bot is in a server. Not in a DM
+  if (!message.guild && message.content.indexOf(prefix) !== -1) {
+    return message.channel.send({
+      embed: {
+        color: colors.yellow,
+        description: 'You need to [add me to a server](https://discordapp.com/oauth2/authorize?client_id=356369928426749952&scope=bot&permissions=1007119423) for any of my commands to work mate!'
+      }
+    })
+  }
+  if (command === 'init') initialize(message, 0)
 
+  else if (command === 'kick') kick(message)
 
-        request.end();
-    }
+  else if (command === 'ban') ban(message)
 
-    // Only run these commands if the bot is in a server. Not in a DM
-    if (!message.guild && message.content.indexOf(prefix) !== -1)
-        return message.channel.send({
-            embed: {
-                color: yellow,
-                description: 'You need to [add me to a server](https://discordapp.com/oauth2/authorize?client_id=356369928426749952&scope=bot&permissions=1007119423) for any of my commands to work mate!',
-            }
-        });
-    if (command == 'init') initialize(message, 0);
+  else if (command === 'createchannel') createChannel(message)
 
-    else if (command == 'kick') kick(message);
+  else if (command === 'delchannel') deleteChannel(message)
 
-    else if (command == 'ban') ban(message);
+  else if (command === 'createrole') _createRole(message)
 
-    else if (command == 'createchannel') createChannel(message);
+  else if (command === 'delrole') deleteRole(message)
 
-    else if (command == 'delchannel') deleteChannel(message);
+  else if (command === 'renrole') renameRole(message)
 
-    else if (command == 'createrole') _createRole(message);
+  else if (command === 'warn') warnMember(message)
 
-    else if (command == 'delrole') deleteRole(message);
+  else if (command === 'welcome') welcomeMember(message.mentions.members.first(), message) // Quick hack
 
-    else if (command == 'renrole') renameRole(message);
+  else if (command === 'contactsupport') contactSupport(message)
 
-    else if (command == 'warn') warnMember(message);
+  else if (command === 'cancelsupport') cancelSupport(message)
 
-    else if (command == 'contactsupport') contactSupport(message);
+  else if (command === 'bulkdm') bulkDM(message)
 
-    else if (command == 'cancelsupport') cancelSupport(message);
+  else if (command === 'help') _help(message)
 
-    else if (command == 'bulkdm') bulkDM(message);
+  else if (command === 'serverinfo') serverInfo(message)
 
-    else if (command == 'help') _help(message);
+  else if (command === 'purge') purge(message)
 
-    else if (command == 'purge') purge(message);
+  else if (command === 'translate') translator(message)
 
-    else if (command == 'translate') translator(message);
+  else if (command === 'say') say(message)
 
-    else if (command == 'say') say(message);
+  else if (command === 'weather') findWeather(message)
 
-    else if (command == 'weather') findWeather(message);
-
-    else if (!message.isMentioned(bot.user)) return message.reply('This doesn\'t seem like a valid command. Does it?');
-
-});
-
+  else if (!message.isMentioned(bot.user)) return message.reply('This doesn\'t seem like a valid command. Does it?')
+})
 
 //
 // Greet users when they come online or go offline and member-log
 //
 bot.on('presenceUpdate', (oldMember, newMember) => {
-    if (oldMember.presence.status !== newMember.presence.status) {
-        if (newMember.presence.status == 'online') {
-            // Greeting users in the General channel has been disabled
-            /*let index = Math.floor(Math.random() * 3);
-            // So that each instance sends message to its own server instead of every server
-            try {
-                newMember.guild.channels.find('name', 'general').send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`);
-            }
-            catch (e) {
-                console.log(e);
-            }*/
-        }
-        const colors = {
-            online: green,
-            offline: grey,
-            idle: yellow,
-            dnd: red
-        }
-        let color = colors[newMember.presence.status];
-        try {
-            newMember.guild.channels.find('name', 'member-log').send({
-                embed: {
-                    color: color,
-                    description: `**${newMember.user.username}** is now ${newMember.presence.status}`,
-                    thumbnail: {
-                        url: newMember.user.avatarURL
-                    },
-                    author: {
-                        name: `MEMBER ${newMember.presence.status.toUpperCase()}`
-                    }
-                }
-            });
-        }
-        catch (e) {
-            console.log(e);
-        }
+  if (oldMember.presence.status !== newMember.presence.status) {
+    if (newMember.presence.status === 'online') {
+      // Greeting users in the General channel has been disabled untill it is a part of settings
+      /* let index = Math.floor(Math.random() * 3)
+      // So that each instance sends message to its own server instead of every server
+      try {
+      newMember.guild.channels.find('name', 'general').send(`${greetings[index]} ${newMember.user}. Welcome back :raising_hand:`)
+      }
+      catch (e) {
+      console.log(e)
+      } */
     }
-});
+    const statusColors = {
+      online: colors.green,
+      offline: colors.grey,
+      idle: colors.yellow,
+      dnd: colors.red
+    }
+    let color = statusColors[newMember.presence.status]
+    try {
+      newMember.guild.channels.find('name', 'member-log').send({
+        embed: {
+          color: color,
+          description: `**${newMember.user.username}** is now ${newMember.presence.status}`,
+          thumbnail: {
+            url: newMember.user.avatarURL
+          },
+          author: {
+            name: `MEMBER ${newMember.presence.status.toUpperCase()}`
+          }
+        }
+      })
+    } catch (e) {
+      console.log(e)
+    }
+  }
+})
 
 //
 // Server greeting
 //
 bot.on('guildMemberAdd', member => {
-    let _member = member;
-    // If the joined user is a support staff, welcome them
-    for (let i in staff) {
-        if (_member.id == staff[i].userID) {
-            welcomeOfficial(_member);
-        }
-    }
-    try {
-        _member.guild.channels.find('name', 'welcome').send({
-            embed: {
-                color: blue,
-                description: `**Welcome** ${_member.user}! You are the ${_member.guild.memberCount + 1}th member!`,
-                thumbnail: {
-                    url: _member.user.avatarURL
-                },
-                author: {
-                    name: 'WELCOME'
-                }
-            }
-        });
-        _member.guild.channels.find('name', 'member-log').send({
-            embed: {
-                color: blue,
-                description: `${_member.user} has joined the server`,
-                thumbnail: {
-                    url: bot.user.avatarURL
-                },
-                author: {
-                    name: 'MEMBER JOINED'
-                }
-            }
-        });
-    }
-    catch (e) {
-        console.log(e);
-    }
-});
+  welcomeMember(member, false)
+})
 bot.on('guildMemberRemove', member => {
-    let _member = member;
-    try {
-        _member.guild.channels.find('name', 'member-log').send({
-            embed: {
-                color: red,
-                description: `${_member.user} has left the server`,
-                author: {
-                    name: 'MEMBER LEFT'
-                }
-            }
-        });
-    }
-    catch (e) {
-        console.log(e);
-    }
-
-});
+  try {
+    member.guild.channels.find('name', 'member-log').send({
+      embed: {
+        color: colors.red,
+        description: `${member.user} has left the server`,
+        author: {
+          name: 'MEMBER LEFT'
+        }
+      }
+    })
+  } catch (e) {
+    console.log(e)
+  }
+})
 
 //
 // Server join log
 //
 bot.on('guildCreate', guild => {
-    try {
-        // Init the guild with no message (auto initialization)
-        initialize(0, guild);
-    }
-    catch (e) {
-        message.reply(`An error occurred while initialization. Please check if I have required permissions. Error: ${e}`);
-    }
-    bot.channels.find('id', config.teroneLog).send({
-        embed: {
-            color: 3447003,
-            description: `Terone is now a member of **${guild.name}**`,
-            thumbnail: {
-                url: guild.iconURL
-            },
-            author: {
-                name: 'SERVER JOINED'
-            },
-            fields: [
-                {
-                    "name": "Owner",
-                    "value": `${guild.owner}`
-                },
-                {
-                    "name": "Server Region",
-                    "value": `${guild.region}`
-                },
-                {
-                    "name": "Joined at",
-                    "value": `${guild.joinedAt}`
-                },
-                {
-                    "name": "Members",
-                    "value": `${guild.memberCount}`
-                }
-            ]
+  try {
+    // Init the guild with no message (auto initialization)
+    initialize(0, guild)
+  } catch (e) {
+    guild.channels.find('name', 'general').send(`Automatic initialization failed. Please check if I have required permissions and run the \`++init\` command. Error: ${e}`)
+  }
+  bot.channels.find('id', config.teroneLog).send({
+    embed: {
+      color: 3447003,
+      description: `Terone is now a member of **${guild.name}**`,
+      thumbnail: {
+        url: guild.iconURL
+      },
+      author: {
+        name: 'SERVER JOINED'
+      },
+      fields: [
+        {
+          'name': 'Owner',
+          'value': `${guild.owner}`
+        },
+        {
+          'name': 'Server Region',
+          'value': `${guild.region}`
+        },
+        {
+          'name': 'Joined at',
+          'value': `${guild.joinedAt}`
+        },
+        {
+          'name': 'Members',
+          'value': `${guild.memberCount}`
         }
-    });
-});
+      ]
+    }
+  })
+})
 
 //
 // Server leave log
 //
 bot.on('guildDelete', guild => {
-    bot.channels.find('id', config.teroneLog).send({
-        embed: {
-            color: red,
-            description: `Terone is no longer a member of **${guild.name}**`,
-            thumbnail: {
-                url: guild.iconURL
-            },
-            author: {
-                name: 'SERVER LEFT'
-            },
-            fields: [
-                {
-                    "name": "Owner",
-                    "value": `${guild.owner}`
-                },
-                {
-                    "name": "Server Region",
-                    "value": `${guild.region}`
-                },
-                {
-                    "name": "Server ID",
-                    "value": `${guild.id}`
-                },
-                {
-                    "name": "Joined at",
-                    "value": `${guild.joinedAt}`
-                },
-                {
-                    "name": "Members",
-                    "value": `${guild.memberCount}`
-                }
-            ]
+  bot.channels.find('id', config.teroneLog).send({
+    embed: {
+      color: colors.red,
+      description: `Terone is no longer a member of **${guild.name}**`,
+      thumbnail: {
+        url: guild.iconURL
+      },
+      author: {
+        name: 'SERVER LEFT'
+      },
+      fields: [
+        {
+          'name': 'Owner',
+          'value': `${guild.owner}`
+        },
+        {
+          'name': 'Server Region',
+          'value': `${guild.region}`
+        },
+        {
+          'name': 'Server ID',
+          'value': `${guild.id}`
+        },
+        {
+          'name': 'Joined at',
+          'value': `${guild.joinedAt}`
+        },
+        {
+          'name': 'Members',
+          'value': `${guild.memberCount}`
         }
-    });
-});
-
-bot.login(config.token);
-
+      ]
+    }
+  })
+})
 
 //
 // Separate commands from arguments
 //
-function separateCommand(message) {
-    // Store the content in a temp var
-    let _message = message.content;
-    // Split the message and then remove the ++ prefix
-    args = _message.slice(prefix.length).trim().split(/ +/g);
-    // Separate the command from the arguments
-    command = args.shift().toLowerCase();
+function separateCommand (message) {
+  // Store the content in a temp var
+  let _message = message.content
+  // Split the message and then remove the ++ prefix
+  args = _message.slice(prefix.length).trim().split(/ +/g)
+  // Separate the command from the arguments
+  command = args.shift().toLowerCase()
 
-    for (let i in args) {
-        if (args[i].indexOf('++') !== -1) {
-            args = 0;
-            command = 0;
-            return message.reply('you cannot use multiple commands at once.');
-        }
+  for (let i in args) {
+    if (args[i].indexOf('++') !== -1) {
+      args = 0
+      command = 0
+      return message.reply('you cannot use multiple commands at once.')
     }
+  }
 
-    console.log('command: ', command, 'args: ', args);
+  console.log('command: ', command, 'args: ', args)
 }
 
 //
 // Check for vulgar comments
 //
-function checkProfanity(message) {
-    _message = message.content.toLowerCase();
-    _message = _message.split(' ');
-    for (let i in _message) {
-        for (let j in badwords) {
-            if (_message[i] == badwords[j]) {
-                console.log(_message[i]);
-                profanity = true;
-                message.delete();
-                message.channel.send({
-                    embed: {
-                        color: red,
-                        description: `No profanity ${message.author}!`,
-                        thumbnail: {
-                            url: message.author.avatarURL
-                        },
-                        author: {
-                            name: 'PROFANITY DETECTED'
-                        }
-                    }
-                });
-                break;
+function checkProfanity (message) {
+  let _message = message.content.toLowerCase()
+  _message = _message.split(' ')
+  for (let i in _message) {
+    for (let j in badwords) {
+      if (_message[i] === badwords[j]) {
+        console.log(_message[i])
+        profanity = true
+        message.delete()
+        message.channel.send({
+          embed: {
+            color: colors.red,
+            description: `No profanity ${message.author}!`,
+            thumbnail: {
+              url: message.author.avatarURL
+            },
+            author: {
+              name: 'PROFANITY DETECTED'
             }
-            else
-                profanity = false;
-        }
+          }
+        })
+        break
+      } else {
+        profanity = false
+      }
     }
+  }
 }
 
 //
 // Purge //
 //
-function purge(message) {
+function purge (message) {
+  if (!message.member.hasPermission(['MANAGE_MESSAGES'])) {
+    return message.channel.send(`${message.author} Don't try to remove evidence :D ! You don't have the permissions to manage messages`)
+  }
 
-    if (!message.member.hasPermission(['MANAGE_MESSAGES']))
-        return message.channel.send(`${message.author} Don't try to remove evidence :D ! You don't have the permissions to manage messages`);
-    // This command removes all messages from all users in the channel, up to 100.
+  // The command removes all messages from all users in the channel, up to 100.
 
-    // Get the delete count + the command itself
-    const deleteCount = args[0];
+  // Get the delete count + the command itself
+  const deleteCount = args[0]
 
-    if (!deleteCount || deleteCount < 2 || deleteCount > 100)
-        return message.reply('Please provide a number between 2 and 100 for the number of messages to delete');
-
-    // Get messages and delete them
-    message.channel.fetchMessages({ limit: deleteCount })
-        .then(messages => message.channel.bulkDelete(messages))
-        .catch(error => message.reply(`Couldn't delete messages because of: ${error}`));
-
+  if (!deleteCount || deleteCount < 2 || deleteCount > 100) {
+    return message.reply('Please provide a number between 2 and 100 for the number of messages to delete')
+  }
+  // Get messages and delete them
+  message.channel.fetchMessages({ limit: deleteCount })
+    .then(messages => message.channel.bulkDelete(messages))
+    .catch(error => message.reply(`Couldn't delete messages because of: ${error}`))
 }
 
 //
 // Translator
 //
-function translator(message) {
+function translator (message) {
+  let string = []
+  // Transfer the word(s) to another array
+  for (let i = 0; i < args.length - 1; i++) {
+    string[i] = args[i]
+  }
 
+  string = string.join(' ')
 
-    let string = [];
-    // Transfer the word(s) to another array
-    for (let i = 0; i < args.length - 1; i++) {
-        string[i] = args[i];
+  // Capitalize first letter in order to be able to work with isoConv
+  let lang = args[args.length - 1].toLowerCase().split('')
+  lang[0] = lang[0].toUpperCase()
+  lang = lang.join('')
+
+  // Convert given language to appropriate ISO code
+  let targetLang = isoConv(lang)
+
+  // Compatiblity issue with Chinese b/w isoConv and the translation API
+  targetLang = targetLang === 'zh' ? 'zh-cn' : targetLang
+
+  translate(string, { to: targetLang }).then(result => {
+    if (result.from.text.autoCorrected) {
+      message.channel.send(`The text was corrected to: ${result.from.text.value}`)
     }
-
-    string = string.join(' ');
-
-    // Capitalize first letter in order to be able to work with isoConv
-    let lang = args[args.length - 1].toLowerCase().split('');
-    lang[0] = lang[0].toUpperCase();
-    lang = lang.join('');
-
-    // Convert given language to appropriate ISO code
-    let targetLang = isoConv(lang);
-
-    // Compatiblity issue with isoConv and translation API
-    targetLang = targetLang == 'zh' ? 'zh-cn' : targetLang;
-
-    translate(string, { to: targetLang }).then(result => {
-        if (result.from.text.autoCorrected) {
-            message.channel.send(`The text was corrected to: ${result.from.text.value}`);
+    message.channel.send({
+      embed: {
+        color: 3447003,
+        description: `**Translation from** __${isoConv(result.from.language.iso)}__:   ${result.text}`,
+        thumbnail: {
+          url: 'http://res.cloudinary.com/daemonad/image/upload/v1504465478/Paomedia-Small-N-Flat-Globe_z01tid.png'
+        },
+        author: {
+          name: 'TRANSLATOR'
         }
-        message.channel.send({
-            embed: {
-                color: 3447003,
-                description: `**Translation from** __${isoConv(result.from.language.iso)}__:   ${result.text}`,
-                thumbnail: {
-                    url: 'http://res.cloudinary.com/daemonad/image/upload/v1504465478/Paomedia-Small-N-Flat-Globe_z01tid.png'
-                },
-                author: {
-                    name: 'TRANSLATOR'
-                }
-            }
-        });
-    }).catch(err => {
-        message.channel.send(`An error occured while attempting translate ${err}`);
-    });
+      }
+    })
+  }).catch(err => {
+    message.channel.send(`An error occured while attempting translate ${err}`)
+  })
 }
 
 //
 // Kick members
 //
-function kick(message) {
-    if (!message.member.hasPermission(['KICK_MEMBERS']))
-        return message.reply(`Sorry, you don't have permissions to use this!`);
+function kick (message) {
+  if (!message.member.hasPermission(['KICK_MEMBERS'])) {
+    return message.reply(`Sorry, you don't have permissions to use this!`)
+  }
 
-    // Check if member exsits and is kicable 
-    let member = message.mentions.members.first();
-    let reason = args[1];
-    if (!reason)
-        reason = 'No specified reason';
-    if (!member)
-        return message.reply('Please mention a valid member of this server');
-    if (!member.kickable)
-        return message.reply('I cannot kick this user! Do they have a higher role? Do I have kick permissions?');
-
-    member.kick(reason)
-        .then(() => {
-            message.channel.send({
-                embed: {
-                    color: red,
-                    description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
-                    thumbnail: {
-                        url: member.user.avatarURL
-                    },
-                    author: {
-                        name: 'MODERATION'
-                    }
-                }
-            });
-            message.guild.channels.find('name', 'server-log').send({
-                embed: {
-                    color: red,
-                    description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
-                    thumbnail: {
-                        url: member.user.avatarURL
-                    },
-                    author: {
-                        name: 'MODERATION'
-                    }
-                }
-            });
-
-        })
-        .catch(error => message.channel.send(`Sorry ${message.author} I couldn't kick that member because of : ${error}`));
+  // Check if member exsits and is kicable
+  let member = message.mentions.members.first()
+  let reason = args[1]
+  if (!reason) {
+    reason = 'No specified reason'
+  }
+  if (!member) {
+    return message.reply('Please mention a valid member of this server')
+  }
+  if (!member.kickable) {
+    return message.reply('I cannot kick this user! Do they have a higher role? Do I have kick permissions?')
+  }
+  member.kick(reason)
+    .then(() => {
+      message.channel.send({
+        embed: {
+          color: colors.red,
+          description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
+          thumbnail: {
+            url: member.user.avatarURL
+          },
+          author: {
+            name: 'MODERATION'
+          }
+        }
+      })
+      message.guild.channels.find('name', 'server-log').send({
+        embed: {
+          color: colors.red,
+          description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
+          thumbnail: {
+            url: member.user.avatarURL
+          },
+          author: {
+            name: 'MODERATION'
+          }
+        }
+      })
+    })
+    .catch(error => message.channel.send(`Sorry ${message.author} I couldn't kick that member because of : ${error}`))
 }
 
 //
 // Ban members
 //
-function ban(message) {
-    if (!message.member.hasPermission(['BAN_MEMBERS']))
-        return message.channel.send(`${message.author} You sure about that? Apparently, **you don't have the required permissions.**`);
-    let member = message.mentions.members.first();
-    let reason = args[1];
-    if (!reason)
-        reason = 'No specific reason';
-    member.ban(reason)
-        .then(() => {
-            message.channel.send({
-                embed: {
-                    color: red,
-                    description: `**${member.user.username}** has been banned by the moderators/administrators because of: ${reason}`,
-                    thumbnail: {
-                        url: member.user.avatarURL
-                    },
-                    author: {
-                        name: 'MODERATION'
-                    }
-                }
-            });
-            message.guild.channels.find('name', 'server-log').send({
-                embed: {
-                    color: red,
-                    description: `**${member.user.username}** has been banned by the administrator`,
-                    thumbnail: {
-                        url: member.user.avatarURL
-                    },
-                    author: {
-                        name: 'MODERATION'
-                    }
-                }
-            });
+function ban (message) {
+  if (!message.member.hasPermission(['BAN_MEMBERS'])) {
+    return message.channel.send(`${message.author} You sure about that? Apparently, **you don't have the required permissions.**`)
+  }
+  let member = message.mentions.members.first()
+  let reason = args[1]
+  if (!reason) {
+    reason = 'No specific reason'
+  }
+  member.ban(reason)
+    .then(() => {
+      message.channel.send({
+        embed: {
+          color: colors.red,
+          description: `**${member.user.username}** has been banned by the moderators/administrators because of: ${reason}`,
+          thumbnail: {
+            url: member.user.avatarURL
+          },
+          author: {
+            name: 'MODERATION'
+          }
         }
-        )
-        .catch(error => message.channel.send(`Sorry ${message.author} I couldn't ban that member because of : ${error}`));
-
+      })
+      message.guild.channels.find('name', 'server-log').send({
+        embed: {
+          color: colors.red,
+          description: `**${member.user.username}** has been banned by the administrator`,
+          thumbnail: {
+            url: member.user.avatarURL
+          },
+          author: {
+            name: 'MODERATION'
+          }
+        }
+      })
+    }
+    )
+    .catch(error => message.channel.send(`Sorry ${message.author} I couldn't ban that member because of : ${error}`))
 }
 
 //
 // Say stuff
 // Same logic as translator for separating message
 //
-function say(message) {
-    if (profanity)
-        return;
-    let _message = [];
-    for (let i = 0; i < args.length; i++) {
-        _message[i] = args[i];
+function say (message) {
+  if (profanity) return
+  let _message = []
+  for (let i in args) {
+    _message[i] = args[i]
+  }
+  _message = _message.join(' ')
+  message.channel.send({
+    embed: {
+      color: colors.green,
+      description: `${_message}`,
+      author: {
+        iconUrl: bot.user.avatarURL
+      }
     }
-    _message = _message.join(' ');
-    message.channel.send({
-        embed: {
-            color: green,
-            description: `${_message}`,
-            author: {
-                iconUrl: bot.user.avatarURL
-            }
-        }
-    });
+  })
 }
 
 //
 // Creates a channel
 //
-function createChannel(message) {
-    if (!message.member.hasPermission(['MANAGE_CHANNELS']))
-        return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`);
-    let channelName = args[0];
-    let channelType = args[1];
-    try {
-        if (!message.guild.channels.exists('name', channelName)) {
-            if (channelType == 'text' || channelType == 'voice') {
-                message.guild.createChannel(channelName, channelType)
-                    .then(() => {
-                        let creationTime = message.guild.channels.find('name', channelName).createdAt;
-                        message.guild.channels.find('name', 'server-log').send({
-                            embed: {
-                                color: blue,
-                                description: `Channel **${channelName}** created by ${message.author} at ${creationTime}`,
-                                author: {
-                                    name: 'CHANNEL CREATED'
-                                }
-                            }
-                        })
-                    });
-
-            }
-            else message.channel.send('**Please check if channel already exists and if you have entered valid channel type**: `text` or `voice`');
-        }
+function createChannel (message) {
+  if (!message.member.hasPermission(['MANAGE_CHANNELS'])) {
+    return message.channel.send(`${message.author} You can't really do that can you? **You don't have the required permissions to manage channels!`)
+  }
+  let channelName = args[0]
+  let channelType = args[1]
+  try {
+    if (!message.guild.channels.exists('name', channelName)) {
+      if (channelType === 'text' || channelType === 'voice') {
+        message.guild.createChannel(channelName, channelType)
+          .then(() => {
+            let creationTime = message.guild.channels.find('name', channelName).createdAt
+            message.guild.channels.find('name', 'server-log').send({
+              embed: {
+                color: colors.blue,
+                description: `Channel **${channelName}** created by ${message.author} at ${creationTime}`,
+                author: {
+                  name: 'CHANNEL CREATED'
+                }
+              }
+            })
+          })
+      } else message.channel.send('**Please check if channel already exists and if you have entered valid channel type**: `text` or `voice`')
     }
-    catch (e) {
-        console.log(e);
-    }
-
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 //
 // Deletes a channel
 //
-function deleteChannel(message) {
-    if (!message.member.hasPermission(['MANAGE_CHANNELS']))
-        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
-    let channel = message.mentions.channels.first();
-    console.log(channel);
-    try {
-        if (channel) {
-            channel.delete()
-                .then(() => {
-                    message.guild.channels.find('name', 'server-log').send({
-                        embed: {
-                            color: red,
-                            description: `Channel **${channel.name}** was deleted by ${message.author}`,
-                            author: {
-                                name: 'CHANNEL DELETED'
-                            }
-                        }
-                    })
-                });
-        } else message.channel.send(`**I can't really delete that channel mate!** Check if it even exists`);
-    }
-    catch (e) {
-        console.log(e);
-    }
+function deleteChannel (message) {
+  if (!message.member.hasPermission(['MANAGE_CHANNELS'])) {
+    return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`)
+  }
+  let channel = message.mentions.channels.first()
+  console.log(channel)
+  try {
+    if (channel) {
+      channel.delete()
+        .then(() => {
+          message.guild.channels.find('name', 'server-log').send({
+            embed: {
+              color: colors.red,
+              description: `Channel **${channel.name}** was deleted by ${message.author}`,
+              author: {
+                name: 'CHANNEL DELETED'
+              }
+            }
+          })
+        })
+    } else message.channel.send(`**I can't really delete that channel mate!** Check if it even exists`)
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 //
-// Creates a given role 
+// Creates a given role
 //
-function _createRole(message) {
+function _createRole (message) {
+  // IF the member has required permissions
+  if (!message.member.hasPermission(['MANAGE_ROLES'])) {
+    return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`)
+  }
+  let name = args[0]; let color = args[1]
+  if (!name) {
+    return message.reply('**Please enter a valid role name**')
+  }
+  if (!color) {
+    color = 'DEFAULT'
+  } else {
+    color.toUpperCase()
+  }
+  message.guild.createRole({
+    name, color, mentionable: true
+  })
+    .then(log())
+    .catch((e) => message.channel.send(e))
 
-    // IF the member has required permissions
-    if (!message.member.hasPermission(['MANAGE_ROLES']))
-        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
-
-    let name = args[0];
-    let color = args[1];
-    if (!name)
-        return message.reply('**Please enter a valid role name**');
-    if (!color)
-        color = 'DEFAULT';
-    else
-        color.toUpperCase();
-    message.guild.createRole({
-        name, color, mentionable: true
+  // Send the log message to server-log
+  function log () {
+    message.guild.channels.find('name', 'server-log').send({
+      embed: {
+        color: colors.blue,
+        description: `Role **${name}** created by ${message.author}`,
+        author: {
+          name: 'ROLE CREATED'
+        }
+      }
     })
-        .then(log())
-        .catch((e) => message.channel.send(e));
-
-
-    // Send the log message to server-log
-    function log() {
-        message.guild.channels.find('name', 'server-log').send({
-            embed: {
-                color: blue,
-                description: `Role **${name}** created by ${message.author}`,
-                author: {
-                    name: 'ROLE CREATED'
-                }
-            }
-        });
-    }
+  }
 }
 
 //
 // Deletes a given role
 //
-function deleteRole(message) {
-    if (!message.member.hasPermission(['MANAGE_ROLES']))
-        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!**`);
+function deleteRole (message) {
+  if (!message.member.hasPermission(['MANAGE_ROLES'])) {
+    return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!**`)
+  }
 
+  let role = message.mentions.roles.first()
+  let roleName = role.name
+  if (!role) {
+    return message.reply('Please mention a valid role of this server mate!')
+  }
+  if (!role.editable) {
+    return message.reply('I cannot remove this role! Do I have the permissions?')
+  }
 
-    let role = message.mentions.roles.first();
-    let roleName = role.name;
-    if (!role)
-        return message.reply('Please mention a valid role of this server mate!');
-    if (!role.editable)
-        return message.reply('I cannot remove this role! Do I have the permissions?');
-
-    try {
-        role.delete();
-        message.guild.channels.find('name', 'server-log').send({
-            embed: {
-                color: red,
-                description: `Role **${roleName}** deleted by ${message.author}`,
-                author: {
-                    name: 'ROLE DELETED'
-                }
-            }
-        });
-    }
-    catch (e) {
-        console.log(e);
-    }
+  try {
+    role.delete()
+    message.guild.channels.find('name', 'server-log').send({
+      embed: {
+        color: colors.red,
+        description: `Role **${roleName}** deleted by ${message.author}`,
+        author: {
+          name: 'ROLE DELETED'
+        }
+      }
+    })
+  } catch (e) {
+    console.log(e)
+  }
 }
 
-
 //
-// Renames a given role 
+// Renames a given role
 //
-function renameRole(message) {
-    if (!message.member.hasPermission(['MANAGE_ROLES']))
-        return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`);
+function renameRole (message) {
+  if (!message.member.hasPermission(['MANAGE_ROLES'])) {
+    return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`)
+  }
+  let role = message.mentions.roles.first()
+  // Store the name in a var for backup
+  let name = args[1]; let roleName = role.name
 
-    let role = message.mentions.roles.first();
-    // Store the name in a var for backup
-    let roleName = role.name;
-    let name = args[1];
-    if (!role)
-        return message.reply('Please mention a valid role of this server mate!');
-    if (!role.editable)
-        return message.reply('I cannot remove this role! Do I have the permissions?');
+  if (!role) {
+    return message.reply('Please mention a valid role of this server mate!')
+  }
+  if (!role.editable) {
+    return message.reply('I cannot remove this role! Do I have the permissions?')
+  }
 
-
-    try {
-        role.edit({ name });
-        message.guild.channels.find('name', 'server-log').send({
-            embed: {
-                color: red,
-                description: `Role **${roleName}** was renamed to **${name}** by ${message.author}`,
-                author: {
-                    name: 'ROLE MODIFIED'
-                }
-            }
-        });
-    }
-    catch (e) {
-        console.log(e);
-    }
-
-
+  try {
+    role.edit({ name })
+    message.guild.channels.find('name', 'server-log').send({
+      embed: {
+        color: colors.red,
+        description: `Role **${roleName}** was renamed to **${name}** by ${message.author}`,
+        author: {
+          name: 'ROLE MODIFIED'
+        }
+      }
+    })
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 //
 // Sends a warning to the channel mentioning the member as well as DMs the member
-function warnMember(message) {
-    let reason = args[1];
-    let member = message.mentions.members.first();
+function warnMember (message) {
+  let reason = args[1]
+  let member = message.mentions.members.first()
 
-    if (!member)
-        return message.channel.send(`${message.author}, please mention the name of the member to warn`);
-    if (member.user == message.author)
-        return message.channel.send(`${message.author}, you can't warn yourself mate :D`);
-    if (!reason)
-        return message.channel.send(`${message.author}, please provide a reason for the warning`);
+  if (!member) {
+    return message.channel.send(`${message.author}, please mention the name of the member to warn`)
+  }
+  if (member.user === message.author) {
+    return message.channel.send(`${message.author}, you can't warn yourself mate :D`)
+  }
+  if (!reason) {
+    return message.channel.send(`${message.author}, please provide a reason for the warning`)
+  }
 
-    message.channel.send({
-        embed: {
-            color: yellow,
-            description: `${member} has been warned by ${message.author} for **${reason}**`,
-            author: {
-                name: 'WARNING',
-                iconURL: message.author.avatarURL
-            },
-            thumbnail: {
-                url: member.user.avatarURL
-            }
+  message.channel.send({
+    embed: {
+      color: colors.yellow,
+      description: `${member} has been warned by ${message.author} for **${reason}**`,
+      author: {
+        name: 'WARNING',
+        iconURL: message.author.avatarURL
+      },
+      thumbnail: {
+        url: member.user.avatarURL
+      }
+    }
+  })
+
+  member.user.send({
+    embed: {
+      color: colors.yellow,
+      author: {
+        iconURL: message.author.avatarURL
+      },
+      fields: [
+        {
+          'name': 'Warning',
+          'value': `You've been warned!`
+        },
+        {
+          'name': 'Server',
+          'value': `${message.guild.name}`
+        },
+        {
+          'name': 'Reason',
+          'value': `${reason}`
         }
-    });
-
-    member.user.send({
-        embed: {
-            color: yellow,
-            author: {
-                iconURL: message.author.avatarURL
-            },
-            fields: [
-                {
-                    "name": "Warning",
-                    "value": `You've been warned!`
-                },
-                {
-                    "name": "Server",
-                    "value": `${message.guild.name}`
-                },
-                {
-                    "name": "Reason",
-                    "value": `${reason}`
-                }
-            ]
-        }
-    });
+      ]
+    }
+  })
 }
 
 //
 // Sends a DM to multiple members
 //
-function bulkDM(message) {
-    if (!message.member.hasPermission(['ADMINISTRATOR']))
-        return message.channel.send(`${message.author}, **you don't have the required permissions!**`);
-    // Declare an empty message array to push the message strings into later on
-    let _message = [];
+function bulkDM (message) {
+  if (!message.member.hasPermission(['ADMINISTRATOR'])) {
+    return message.channel.send(`${message.author}, **you don't have the required permissions!**`)
+  }
+  // Declare an empty message array to push the message strings into later on
+  let _message = []
 
-    // Untill a word starts with < (mention) or @everyone, keep adding it to the message
-    for (let i in args) {
-        if (args[i].indexOf('<') == -1 && args[i].indexOf('@') == -1)
-            _message.push(args[i])
-    }
-    _message = _message.join(' ');
+  // Untill a word starts with < (mention) or @everyone, keep adding it to the message
+  for (let i in args) {
+    if (args[i].indexOf('<') === -1 && args[i].indexOf('@') === -1) _message.push(args[i])
+  }
+  _message = _message.join(' ')
 
-    // Get the snowflake separated 
-    let users = args.splice(1, args.length);
-    let isEveryoneMentioned = false;
+  // Get the snowflake separated
+  let users = args.splice(1, args.length)
+  let isEveryoneMentioned = false
 
-    // If everyone is mentioned, find every member of the guild and push their user ID to users array
-    if (users[0] == '@everyone') {
-        isEveryoneMentioned = true;
-        message.guild.fetchMembers().then(guild => {
-            users = guild.members.keyArray();
-            sendMsg(users);
-        });
+  // If everyone is mentioned, find every member of the guild and push their user ID to users array
+  if (users[0] === '@everyone') {
+    isEveryoneMentioned = true
+    message.guild.fetchMembers().then(guild => {
+      users = guild.members.keyArray()
+      sendMsg(users)
+    })
+  }
+  // Only separate IDs from mentions if @everyone is not mentioned
+  if (!isEveryoneMentioned) {
+    for (let i in users) {
+      users[i] = users[i].split('').splice(2, users[i].length - 3).join('')
     }
-    // Only separate IDs from mentions if @everyone is not mentioned
-    if (!isEveryoneMentioned){
-        for (let i in users)
-            users[i] = users[i].split('').splice(2, users[i].length - 3).join('');
-        sendMsg(users);
-    }
-    // Find every user in the array and sent them the message
-    function sendMsg(users) {
-        try {
-            for (let i in users) {
-                bot.fetchUser(users[i]).then(user => {
-                    user.send({
-                        embed: {
-                            color: blue,
-                            description: `You've received a message from the administrator`,
-                            author: {
-                                name: 'DM from Administrator'
-                            },
-                            fields: [
-                                {
-                                    name: 'Server',
-                                    value: `${message.guild.name}`
-                                },
-                                {
-                                    name: 'Message',
-                                    value: `${_message}`
-                                },
-                                {
-                                    name: 'Time',
-                                    value: `${new Date(message.createdTimestamp)}`
-                                },
-                            ]
-                        }
-                    });
-                });
+    sendMsg(users)
+  }
+  // Find every user in the array and sent them the message
+  function sendMsg (users) {
+    try {
+      for (let i in users) {
+        bot.fetchUser(users[i]).then(user => {
+          user.send({
+            embed: {
+              color: colors.blue,
+              description: `You've received a message from the administrator`,
+              author: {
+                name: 'DM from Administrator'
+              },
+              fields: [
+                {
+                  name: 'Server',
+                  value: `${message.guild.name}`
+                },
+                {
+                  name: 'Message',
+                  value: `${_message}`
+                },
+                {
+                  name: 'Time',
+                  value: `${new Date(message.createdTimestamp)}`
+                }
+              ]
             }
-            message.guild.channels.find('name', 'server-log').send({
-                embed: {
-                    color: blue,
-                    description: `Bulk DM sent successfully`
-                }
-            });
-            message.channel.send({
-                embed: {
-                    color: blue,
-                    description: `Bulk DM sent successfully`
-                }
-            })
+          })
+        })
+      }
+      message.guild.channels.find('name', 'server-log').send({
+        embed: {
+          color: colors.blue,
+          description: `Bulk DM sent successfully`
         }
-        catch (e) {
-            console.log(e);
+      })
+      message.channel.send({
+        embed: {
+          color: colors.blue,
+          description: `Bulk DM sent successfully`
         }
+      })
+    } catch (e) {
+      console.log(e)
     }
+  }
 }
 
 //
 // Displays weather of any given city
 //
-function findWeather(message) {
-    const loadingLine = 'Loading weather';
-    message.channel.send(`${loadingLine}`);
-    while (!data) {
+function findWeather (message) {
+  const loadingLine = 'Loading weather'
+  message.channel.send(`${loadingLine}`)
+  // Separate the city name from unit
+  const city = args.splice(0, args.length - 1).join('')
+  if (!city) {
+    return message.channel.send('**Please provide a valid city name along with preferred temperature unit (celsius/fahrenheit) in the syntax: <city>, <country> <unit></unit>**')
+  }
+  // Set unit as metric or imperial
+  const unit = args[0].toUpperCase() === 'C' ? 'metric' : 'imperial'
+  // Also keep another variable for displaying unit in results
+  const _unit = args[0].toUpperCase()
+  const appID = config.appID
+  const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${appID}`
+  let data
 
-    }
-    // Separate the city name from unit
-    const city = args.splice(0, args.length - 1).join('');
-    if (!city)
-        return message.channel.send('**Please provide a valid city name along with preferred temperature unit (celsius/fahrenheit) in the syntax: <city>, <country> <unit></unit>**');
-    // Set unit as metric or imperial
-    const unit = args[0].toUpperCase() == 'C' ? 'metric' : 'imperial';
-    // Also keep another variable for displaying unit in results
-    const _unit = args[0].toUpperCase();
-    const appID = config.appID;
-    const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${appID}`;
-    let data;
+  try {
+    data = justGetJSON(url)
+  } catch (e) {
+    message.channel.send(e)
+  }
 
-    try {
-        data = justGetJSON(url);
-    }
-    catch (e) {
-        message.channel.send(e);
-    }
+  if (!data.name) {
+    return message.reply(`**Enter a valid city name please!**`)
+  }
+  const cityName = data.name
+  const countryCode = data.sys.country
+  const temp = data.main.temp
+  const condition = data.weather[0].main
+  const humidity = data.main.humidity
 
-    if (!data.name)
-        return message.reply(`**Enter a valid city name please!**`);
-    const cityName = data.name;
-    const countryCode = data.sys.country;
-    const temp = data.main.temp;
-    const condition = data.weather[0].main;
-    const humidity = data.main.humidity;
-
-
-    message.channel.send({
-        embed: {
-            color: blue,
-            description: `Here are the weather conditions for **${cityName}, ${countryCode}**`,
-            author: {
-                name: 'WEATHER'
-            },
-            fields: [
-                {
-                    "name": "Temperature",
-                    "value": `${temp}°${_unit}`
-                },
-                {
-                    "name": "Sky",
-                    "value": `${condition}`
-                },
-                {
-                    "name": "Humidity",
-                    "value": `${humidity}`
-                }
-            ]
+  message.channel.send({
+    embed: {
+      color: colors.blue,
+      description: `Here are the weather conditions for **${cityName}, ${countryCode}**`,
+      author: {
+        name: 'WEATHER'
+      },
+      fields: [
+        {
+          'name': 'Temperature',
+          'value': `${temp}°${_unit}`
+        },
+        {
+          'name': 'Sky',
+          'value': `${condition}`
+        },
+        {
+          'name': 'Humidity',
+          'value': `${humidity}`
         }
-    });
+      ]
+    }
+  })
 }
 
 //
 // Sends help in DM to user
-// Pending UI changes
-function _help(message) {
-    for (let i in help) {
-        message.author.send({
-            embed: {
-                color: blue,
-                description: `${help[i].description}`,
-                author: {
-                    name: `${help[i].name}`
-                },
-                fields: [
-                    {
-                        "name": "Syntax",
-                        "value": `\`\`\`${help[i].syntax}\`\`\``
-                    },
-                    {
-                        "name": "Example",
-                        "value": `\`\`\`${help[i].example}\`\`\``
-                    }
-                ]
-            }
-        });
-    }
-    message.channel.send({
-        embed: {
-            color: blue,
-            description: `${message.author}, have a look at your inbox.`
-        }
+function _help (message) {
+  for (let i in help) {
+    message.author.send({
+      embed: {
+        color: colors.blue,
+        description: `${help[i].description}`,
+        author: {
+          name: `${help[i].name}`
+        },
+        fields: [
+          {
+            'name': 'Syntax',
+            'value': `\`\`\`${help[i].syntax}\`\`\``
+          },
+          {
+            'name': 'Example',
+            'value': `\`\`\`${help[i].example}\`\`\``
+          }
+        ]
+      }
     })
+  }
+  message.channel.send({
+    embed: {
+      color: colors.blue,
+      description: `${message.author}, have a look at your inbox.`
+    }
+  })
 }
 
 //
 // Sends a server invite to Terone staff members requesting support
 //
-function contactSupport(message) {
-    message.channel.createInvite({ maxAge: 0 }).then((invite) => {
-        for (let i in staff) {
-            bot.fetchUser(staff[i].userID).then((user) => {
-                // Send support request
-                user.send({
-                    embed: {
-                        color: blue,
-                        description: `A user has requested staff support`,
-                        author: {
-                            name: `SUPPORT REQUEST`
-                        },
-                        fields: [
-                            {
-                                "name": "Name",
-                                "value": `${message.author}`
-                            },
-                            {
-                                "name": "Server",
-                                "value": `${message.guild.name}`
-                            },
-                            {
-                                "name": "Invite",
-                                "value": `${invite}`
-                            }
-                        ]
-                    }
-                });
-            });
-        }
-    });
-
-    message.channel.send(`I've requested my staff to attend your issue. To canel the request, type ++cancelsupport.`);
-
+function contactSupport (message) {
+  message.channel.createInvite({ maxAge: 0 }).then((invite) => {
+    for (let i in staff) {
+      bot.fetchUser(staff[i].userID).then((user) => {
+        // Send support request
+        user.send({
+          embed: {
+            color: colors.blue,
+            description: `A user has requested staff support`,
+            author: {
+              name: `SUPPORT REQUEST`
+            },
+            fields: [
+              {
+                'name': 'Name',
+                'value': `${message.author}`
+              },
+              {
+                'name': 'Server',
+                'value': `${message.guild.name}`
+              },
+              {
+                'name': 'Invite',
+                'value': `${invite}`
+              }
+            ]
+          }
+        })
+      })
+    }
+  })
+  message.channel.send(`I've requested my staff to attend your issue. To canel the request, type ++cancelsupport.`)
 }
 
 //
 // Welcomes the staff members when they join a server for support
 //
 
-function welcomeOfficial(official) {
-    let role;
-    // Find the staff official's role
-    for (let i in staff) {
-        if (staff[i].userID == official.user.id) {
-            role = staff[i].role;
-        }
+function welcomeOfficial (official) {
+  let role
+  // Find the staff official's role
+  for (let i in staff) {
+    if (staff[i].userID === official.user.id) {
+      role = staff[i].role
     }
-    official.guild.channels.find('name', 'general').send({
-        embed: {
-            color: blue,
-            description: `An official support staff has joined the server`,
-            author: {
-                name: 'SUPPORT STAFF JOINED'
-            },
-            thumbnail: {
-                url: official.user.avatarURL
-            },
-            fields: [
-                {
-                    'name': 'Name',
-                    'value': `${official.user.username}`
-                },
-                {
-                    'name': 'Role',
-                    'value': `${role}`
-                }
-            ]
-
+  }
+  official.guild.channels.find('name', 'general').send({
+    embed: {
+      color: colors.blue,
+      description: `An official support staff has joined the server`,
+      author: {
+        name: 'SUPPORT STAFF JOINED'
+      },
+      thumbnail: {
+        url: official.user.avatarURL
+      },
+      fields: [
+        {
+          'name': 'Name',
+          'value': `${official.user.username}`
+        },
+        {
+          'name': 'Role',
+          'value': `${role}`
         }
-    });
+      ]
+
+    }
+  })
 }
 
-function cancelSupport(message) {
+function cancelSupport (message) {
+  for (let i in staff) {
+    bot.fetchUser(staff[i].userID).then((user) => {
+      // Send support request
+      user.send({
+        embed: {
+          color: colors.blue,
+          description: `A user has cancelled staff support request`,
+          author: {
+            name: `SUPPORT REQUEST CANCELLED`
+          },
+          fields: [
+            {
+              'name': 'Name',
+              'value': `${message.author}`
+            },
+            {
+              'name': 'Server',
+              'value': `${message.guild.name}`
+            }
+          ]
+        }
+      })
+    })
+  }
+  message.channel.send(`${message.author} Your request has been cancelled`)
+}
+function welcomeMember (member, message) {
+  if (message && !member) {
+    return message.reply('Umm...Whom should I welcome? **Please mention the member to be welcomed**')
+  }// If the joined user is a support staff, welcome them but not if the command was initiated by a message
+  if (!message) {
     for (let i in staff) {
-        bot.fetchUser(staff[i].userID).then((user) => {
-            // Send support request
-            user.send({
-                embed: {
-                    color: blue,
-                    description: `A user has cancelled staff support request`,
-                    author: {
-                        name: `SUPPORT REQUEST CANCELLED`
-                    },
-                    fields: [
-                        {
-                            "name": "Name",
-                            "value": `${message.author}`
-                        },
-                        {
-                            "name": "Server",
-                            "value": `${message.guild.name}`
-                        }
-                    ]
-                }
-            });
-        });
+      if (member.id === staff[i].userID) {
+        welcomeOfficial(member)
+      }
     }
-    message.channel.send(`${message.author} Your request has been cancelled`);
+  }
+  let count = member.guild.memberCount
+  // Get the last digit separated and +1 the count since the actual member count gets incremented by 1 when a new member joins
+  count = count.toString().split('')
+  count = count[count.length - 1]
+  count = parseInt(count)
+  count += 1
+  console.log(count)
+  // Determine the superscript for the member count
+  let superscript
+  switch (count) {
+    case 1: superscript = 'st'
+      break
+    case 2: superscript = 'nd'
+      break
+    case 3: superscript = 'rd'
+      break
+    default: superscript = 'th'
+      break
+  }
+  // If the command was manually initiated, use that channelto welcome, else if it was auto initiated, send it to 'welcome'
+  const targetChannel = message ? message.channel.name : 'welcome'
+  let welcomeMessage
+  if (message) {
+    const membershipTime = Date.parse(new Date()) - member.joinedTimestamp
+    const days = Math.floor(membershipTime / (1000 * 60 * 60 * 24))
+    welcomeMessage = {
+      embed: {
+        color: colors.blue,
+        description: `**Welcome** ${member.user}, you've been a part of **${message.guild.name}** since ${days} days`,
+        thumbnail: {
+          url: member.user.avatarURL
+        },
+        author: {
+          name: 'WELCOME'
+        },
+        fields: [
+          {
+            'name': 'Member Since',
+            'value': `${member.joinedAt}`
+          }
+        ]
+      }
+    }
+  } else if (!message && member) {
+    welcomeMessage = {
+      embed: {
+        color: colors.blue,
+        description: `**Welcome** ${member.user} !You are the ${member.guild.memberCount + 1}${superscript} member!`,
+        thumbnail: {
+          url: member.user.avatarURL
+        },
+        author: {
+          name: 'WELCOME'
+        }
+      }
+    }
+  }
+
+  try {
+    member.guild.channels.find('name', targetChannel).send(welcomeMessage)
+    member.guild.channels.find('name', 'member-log').send({
+      embed: {
+        color: colors.blue,
+        description: `${member.user} has joined the server`,
+        thumbnail: {
+          url: bot.user.avatarURL
+        },
+        author: {
+          name: 'MEMBER JOINED'
+        }
+      }
+    })
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+//
+// Server Status
+//
+function serverInfo (message) {
+  const guild = message.guild
+  const time = Date.parse(new Date()) - guild.createdTimestamp
+  const days = Math.floor(time / (1000 * 60 * 60 * 24))
+  message.channel.send({
+    embed: {
+      color: colors.blue,
+      description: `Here's the server information for ${guild.name}`,
+      thumbnail: {
+        url: guild.iconURL
+      },
+      author: {
+        name: 'SERVER INFORMATION'
+      },
+      fields: [
+        {
+          'name': 'Name',
+          'value': `${guild.name}`
+        },
+        {
+          'name': 'Owner',
+          'value': `${guild.owner.user}`
+        },
+        {
+          'name': 'Date of Creation',
+          'value': `${guild.createdAt}`
+        },
+        {
+          'name': 'Age',
+          'value': `${days} days`
+        },
+        {
+          'name': 'Channels',
+          'value': `${guild.channels.size}`,
+          'inline': true
+        },
+        {
+          'name': 'Members',
+          'value': `${guild.memberCount}`,
+          'inline': true
+        },
+        {
+          'name': 'Roles',
+          'value': `${guild.roles.size}`,
+          'inline': true
+        }
+      ]
+    }
+  })
 }

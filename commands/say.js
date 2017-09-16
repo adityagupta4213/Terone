@@ -16,5 +16,7 @@ exports.run = (bot, message, [...string]) => {
         iconUrl: bot.user.avatarURL
       }
     }
+  }).then(() => {
+    message.delete()
   })
 }

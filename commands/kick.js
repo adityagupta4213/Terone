@@ -43,7 +43,7 @@ exports.run = (client, message, [mention, ...reason]) => {
       message.guild.channels.find('name', 'server-log').send({
         embed: {
           color: colors.red,
-          description: `**${member.user.username}** has been kicked by the moderators/administrators because of: ${reason}`,
+          description: `**${member.user.username}** has been kicked by ${message.author} because of: ${reason}`,
           thumbnail: {
             url: member.user.avatarURL
           },

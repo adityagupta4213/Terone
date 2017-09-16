@@ -1,6 +1,7 @@
 const config = require('../config.json')
 const apiai = require('apiai')
 const app = apiai(config.apiaiToken)
+const profanity = require('./checkProfanity.js')
 
 exports.run = (bot, message) => {
   // Remove the bot mention from the message

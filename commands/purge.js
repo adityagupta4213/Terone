@@ -1,6 +1,3 @@
-//
-// Remove all messages from all users in the channel, up to 100.
-//
 exports.run = (bot, message, [deleteCount]) => {
   if (!message.member.hasPermission(['MANAGE_MESSAGES'])) {
     return message.channel.send(`${message.author} Don't try to remove evidence :D ! You don't have the permissions to manage messages`)

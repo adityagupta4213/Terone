@@ -1,10 +1,6 @@
-//
-// Memeber left log
-//
-
 const colors = require('../colors.json')
 
-exports.run = (bot, member) => {
+exports.run = (bot, message, member) => {
   try {
     member.guild.channels.find('name', 'member-log').send({
       embed: {

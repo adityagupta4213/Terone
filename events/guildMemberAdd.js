@@ -1,11 +1,13 @@
-//
-// Server join log and greeting
-//
-const colors = require('../colors.json')
+const _colors = require('../colors.json')
 const config = require('../config.json')
 const staff = config.staff
-
-exports.run = (bot, member) => {
+// Change string values to int from colors.json
+const colors = {}
+Object.keys(_colors).forEach(function (key) {
+  let value = _colors[key]
+  colors[key] = parseInt(value)
+})
+exports.run = (bot, message, member) => {
   for (let i in staff) {
     if (member.id === staff[i].userID) {
       welcomeOfficial(member)

@@ -8,10 +8,12 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 
-exports.run = (bot, message, [city, unit]) => {
-  if (!city) {
-    return message.channel.send('**Please provide a valid city name along with preferred temperature unit (celsius/fahrenheit) in the syntax: <city>, <country> <unit></unit>**')
+exports.run = (bot, message, [unit, ...city]) => {
+  if (!city || !unit || unit.length > 1) {
+    return message.channel.send('**Please provide a valid city name along with preferred temperature unit (celsius/fahrenheit) in the syntax: <unit> <city>, <country>**')
   }
+
+  city = city.join(' ')
   // Keep a variable for displaying unit in results
   const _unit = unit.toUpperCase()
   // Set unit as metric or imperial

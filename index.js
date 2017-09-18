@@ -28,22 +28,12 @@ bot.on('message', message => {
   let command = args.shift().toLowerCase()
 
   for (let i in args) {
-    if (args[i].indexOf('++') !== -1) {
+    if (args[i].indexOf('++') !== -1 && command !== 'setconfig') {
       args = 0
       command = 0
       return message.reply('Incorrect syntax')
     }
   }
-
-  // The list of if/else is replaced with those simple 2 lines:
-  try {
-    let commandFile = require(`./commands/${command}.js`)
-    commandFile.run(bot, message, args)
-  } catch (err) {
-    console.error(err)
-  }
-  // Check for profanity
-  checkProfanity.run(bot, message)
 
   // If bot is in a DM channel and a command is received
   if (!message.guild && message.content.indexOf(prefix) !== -1) {
@@ -53,9 +43,16 @@ bot.on('message', message => {
         description: 'You need to [add me to a server](https://discordapp.com/oauth2/authorize?client_id=356369928426749952&scope=bot&permissions=1007119423) for any of my commands to work mate!'
       }
     })
+  } else {
+    try {
+      let commandFile = require(`./commands/${command}.js`)
+      commandFile.run(bot, message, args)
+    } catch (err) {
+      console.error(err)
+    }
+    // Check for profanity
+    checkProfanity.run(bot, message)
   }
-
-  // Points system
 })
 
 bot.login(config.token)

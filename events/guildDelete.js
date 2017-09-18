@@ -1,8 +1,11 @@
-//
-// Server leave log
-//
-const colors = require('../colors.json')
 const config = require('../config.json')
+const _colors = require('../colors.json')
+// Change string values to int from colors.json
+const colors = {}
+Object.keys(_colors).forEach(function (key) {
+  let value = _colors[key]
+  colors[key] = parseInt(value)
+})
 
 exports.run = (bot, guild) => {
   bot.channels.find('id', config.teroneLog).send({

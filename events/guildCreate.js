@@ -1,7 +1,4 @@
-//
-// Create required channels
-//
-
+const fs = require('fs')
 const _colors = require('../colors.json')
 const config = require('../config.json')
 const requiredChannels = config.requiredChannels
@@ -12,7 +9,16 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 
+const initialData = {
+  'prefix': '++'
+}
+
+const filepath = `${__dirname}/../data/`
+
 exports.run = (bot, guild) => {
+  fs.writeFile(`${filepath}${guild.id}.json`, JSON.stringify(initialData), err => {
+    console.log(err)
+  })
   try {
     let didInit = true
     for (let i in requiredChannels) {

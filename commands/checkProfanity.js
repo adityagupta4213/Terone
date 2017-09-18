@@ -29,10 +29,9 @@ exports.run = (bot, message) => {
               name: 'PROFANITY DETECTED'
             }
           }
+
         })
-        break
       }
     }
   }
-  return true
 }

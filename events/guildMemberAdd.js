@@ -7,7 +7,7 @@ Object.keys(_colors).forEach(function (key) {
   let value = _colors[key]
   colors[key] = parseInt(value)
 })
-exports.run = (bot, message, member) => {
+exports.run = (bot, member) => {
   for (let i in staff) {
     if (member.id === staff[i].userID) {
       welcomeOfficial(member)

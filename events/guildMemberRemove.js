@@ -1,6 +1,11 @@
-const colors = require('../colors.json')
-
-exports.run = (bot, message, member) => {
+const _colors = require('../colors.json')
+// Change string values to int from colors.json
+const colors = {}
+Object.keys(_colors).forEach(function (key) {
+  let value = _colors[key]
+  colors[key] = parseInt(value)
+})
+exports.run = (bot, member) => {
   try {
     member.guild.channels.find('name', 'member-log').send({
       embed: {

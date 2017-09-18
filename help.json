@@ -87,15 +87,15 @@
     "name": "Translate",
     "description": "Translate a given word/sentence to most languages",
     "command": "translate",
-    "syntax": "++translate <string> <targetLanguageName>",
-    "example": "++translate Hello spanish"
+    "syntax": "++translate <sourceLanguageName (use 'auto' if unknown)> <targetLanguageName> <string> ",
+    "example": "++translate english spanish Hello \n\n++translate auto spanish Hello"
   },
   {
     "name": "Weather",
     "description": "Get the weather of almost any location",
     "command": "weather",
-    "syntax": "++weather <location w/out country code> <temperatureUnit (C/F)>",
-    "example": "++weather new york c"
+    "syntax": "++weather <temperatureUnit (C/F)> <location w/out country code>",
+    "example": "++weather c new york"
   },
   {
     "name": "Contact Support",

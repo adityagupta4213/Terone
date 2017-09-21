@@ -3,6 +3,7 @@ const fs = require('fs')
 const config = require('./config.json')
 const ai = require('./commands/ai.js')
 const checkProfanity = require('./commands/checkProfanity.js')
+const filterHandler = require('./commands/filterHandler.js')
 const colors = require('./colors.json')
 
 const bot = new Discord.Client()
@@ -20,7 +21,11 @@ fs.readdir('./events/', (err, files) => {
 
 bot.on('message', message => {
   if (message.author.bot) return
-  // If bot is mentioned but command is not given
+
+  // Check for invite filtering
+  filterHandler.run(bot, message)
+
+  // If bot is mentioned but command is not given else if command is not given
   if (message.isMentioned(bot.user) && message.content.indexOf(config.prefix) === -1) ai.run(bot, message)
   else if (message.content.indexOf(config.prefix) === -1) return
   // This is the best way to define args. Trust me.

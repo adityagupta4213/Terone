@@ -1,3 +1,4 @@
+const fs = require('fs')
 const _colors = require('../colors.json')
 const config = require('../config.json')
 const staff = config.staff
@@ -8,45 +9,18 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 exports.run = (bot, member) => {
+  // Check if member is a Terone official
   for (let i in staff) {
     if (member.id === staff[i].userID) {
       welcomeOfficial(member)
     }
   }
-  let count = member.guild.memberCount
-  // Get the last digit separated and +1 the count since the actual member count gets incremented by 1 when a new member joins
-  count = count.toString().split('')
-  count = count[count.length - 1]
-  count = parseInt(count)
-  count += 1
-  console.log(count)
-  // Determine the superscript for the member count
-  let superscript
-  switch (count) {
-    case 1: superscript = 'st'
-      break
-    case 2: superscript = 'nd'
-      break
-    case 3: superscript = 'rd'
-      break
-    default: superscript = 'th'
-      break
-  }
 
-  try {
-    member.guild.channels.find('name', 'welcome').send({
-      embed: {
-        color: colors.blue,
-        description: `**Welcome** ${member.user} !You are the ${member.guild.memberCount + 1}${superscript} member!`,
-        thumbnail: {
-          url: member.user.avatarURL
-        },
-        author: {
-          name: 'WELCOME'
-        }
-      }
-    })
-    member.guild.channels.find('name', 'member-log').send({
+  const guildID = member.guild.id
+  const settings = JSON.parse(fs.readFileSync(`./data/${guildID}.json`, 'utf8'))
+  // If server log is enabled
+  if (settings.serverlog) {
+    member.guild.channels.find('name', 'server-log').send({
       embed: {
         color: colors.blue,
         description: `${member.user} has joined the server`,
@@ -58,8 +32,47 @@ exports.run = (bot, member) => {
         }
       }
     })
-  } catch (e) {
-    console.log(e)
+  }
+
+  // Only if autowelcome is enabled
+  if (settings.autowelcome) {
+    const welcomeChannel = settings.welcomeChannel
+    let count = member.guild.memberCount
+    // Get the last digit separated and +1 the count since the actual member count gets incremented by 1 when a new member joins
+    count = count.toString().split('')
+    count = count[count.length - 1]
+    count = parseInt(count)
+    count += 1
+    console.log(count)
+    // Determine the superscript for the member count
+    let superscript
+    switch (count) {
+      case 1: superscript = 'st'
+        break
+      case 2: superscript = 'nd'
+        break
+      case 3: superscript = 'rd'
+        break
+      default: superscript = 'th'
+        break
+    }
+
+    try {
+      member.guild.channels.find('name', welcomeChannel).send({
+        embed: {
+          color: colors.blue,
+          description: `**Welcome** ${member.user} !You are the ${member.guild.memberCount + 1}${superscript} member!`,
+          thumbnail: {
+            url: member.user.avatarURL
+          },
+          author: {
+            name: 'WELCOME'
+          }
+        }
+      })
+    } catch (e) {
+      console.log(e)
+    }
   }
 
   function welcomeOfficial (official) {

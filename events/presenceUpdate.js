@@ -1,11 +1,13 @@
 //
 // Greet users when they come online or go offline and member-log
 //
+
 const colors = require('../colors.json')
 
 exports.run = (bot, oldMember, newMember) => {
   if (oldMember.presence.status !== newMember.presence.status) {
     if (newMember.presence.status === 'online') {
+
       // Greeting users in the General channel has been disabled untill it is a part of settings
       /* let index = Math.floor(Math.random() * 3)
       // So that each instance sends message to its own server instead of every server
@@ -16,6 +18,21 @@ exports.run = (bot, oldMember, newMember) => {
       console.log(e)
       } */
     }
+    /* let _guilds = newMember.guild
+    let guilds
+    for (let i in _guilds) {
+      guilds = _guilds[i].filterArray(guild => {
+        let settings
+        try {
+          settings = require(`../data/${guild.id}.json`)
+        } catch (err) { }
+        // If server log is disabled, don't do anything
+        if (settings) {
+          return settings.memberlog
+        }
+      })
+    }
+*/
     const statusColors = {
       online: parseInt(colors.green),
       offline: parseInt(colors.grey),

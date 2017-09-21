@@ -10,13 +10,47 @@ Object.keys(_colors).forEach(function (key) {
 })
 
 const initialData = {
-  'prefix': '++'
+  'prefix': '++',
+  'serverlog': 'false',
+  'memberlog': 'false',
+  'welcomeChannel': 'welcome',
+  'filterinvites': [],
+  'filterlinks': []
 }
 
-const filepath = `${__dirname}/../data/`
-
 exports.run = (bot, guild) => {
-  fs.writeFile(`${filepath}${guild.id}.json`, JSON.stringify(initialData), err => {
+  bot.channels.find('id', config.teroneLog).send({
+    embed: {
+      color: colors.blue,
+      description: `Terone is now a member of **${guild.name}**`,
+      thumbnail: {
+        url: guild.iconURL
+      },
+      author: {
+        name: 'SERVER JOINED'
+      },
+      fields: [
+        {
+          'name': 'Owner',
+          'value': `${guild.owner}`
+        },
+        {
+          'name': 'Server Region',
+          'value': `${guild.region}`
+        },
+        {
+          'name': 'Joined at',
+          'value': `${guild.joinedAt}`
+        },
+        {
+          'name': 'Members',
+          'value': `${guild.memberCount}`
+        }
+      ]
+    }
+  })
+
+  fs.writeFile(`./data/${guild.id}.json`, JSON.stringify(initialData), err => {
     console.log(err)
   })
   try {
@@ -59,34 +93,4 @@ exports.run = (bot, guild) => {
   } catch (e) {
     guild.channels.find('name', 'general').send(`Automatic initialization failed. Please check if I have required permissions and run the \`++init\` command. Error: ${e}`)
   }
-  bot.channels.find('id', config.teroneLog).send({
-    embed: {
-      color: colors.blue,
-      description: `Terone is now a member of **${guild.name}**`,
-      thumbnail: {
-        url: guild.iconURL
-      },
-      author: {
-        name: 'SERVER JOINED'
-      },
-      fields: [
-        {
-          'name': 'Owner',
-          'value': `${guild.owner}`
-        },
-        {
-          'name': 'Server Region',
-          'value': `${guild.region}`
-        },
-        {
-          'name': 'Joined at',
-          'value': `${guild.joinedAt}`
-        },
-        {
-          'name': 'Members',
-          'value': `${guild.memberCount}`
-        }
-      ]
-    }
-  })
 }

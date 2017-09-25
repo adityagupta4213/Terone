@@ -30,6 +30,6 @@ exports.run = (bot, message, filepath, [type, _channel, action]) => {
 
   let responseMessage = action === 'add' ? 'added' : 'removed'
   fs.writeFile(`${filepath}${guild.id}.json`, JSON.stringify(data), err => {
-    if (!err) message.reply(`${type} filter: **Channel **${channel.name}** was successfully ${responseMessage}**`)
+    if (!err) message.reply(`${type} filter: channel **${channel.name}** was successfully **${responseMessage}**`)
   })
 }

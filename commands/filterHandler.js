@@ -12,23 +12,31 @@ exports.run = (bot, message) => {
 
   const filterInviteChannels = settings.filterinvites
   if (filterInviteChannels) {
-    for (let i in filterInviteChannels) {
-      // Check if channel is in filter invites array and message is an invite
-      if (message.channel.id === filterInviteChannels[i] && message.content.indexOf('https://discord.gg/') !== -1) {
-        message.delete()
-        message.reply('This channel does not allow sending invites')
+    try {
+      for (let i in filterInviteChannels) {
+        // Check if channel is in filter invites array and message is an invite
+        if (message.channel.id === filterInviteChannels[i] && message.content.indexOf('https://discord.gg/') !== -1) {
+          message.delete()
+          message.reply('This channel does not allow sending invites')
+        }
       }
+    } catch (e) {
+      console.log(e)
     }
   }
 
   // Same as above
   const filterLinkChannels = settings.filterlinks
   if (filterLinkChannels) {
-    for (let i in filterLinkChannels) {
-      if (message.channel.id === filterLinkChannels[i] && message.content.indexOf('http') !== -1) {
-        message.delete()
-        message.reply('This channel does not allow sending links')
+    try {
+      for (let i in filterLinkChannels) {
+        if (message.channel.id === filterLinkChannels[i] && message.content.indexOf('http') !== -1) {
+          message.delete()
+          message.reply('This channel does not allow sending links')
+        }
       }
+    } catch (e) {
+      console.log(e)
     }
   }
 }

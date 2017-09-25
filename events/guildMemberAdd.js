@@ -19,7 +19,7 @@ exports.run = (bot, member) => {
   const guildID = member.guild.id
   const settings = JSON.parse(fs.readFileSync(`./data/${guildID}.json`, 'utf8'))
   // If server log is enabled
-  if (settings.serverlog) {
+  if (settings.serverlog === 'true') {
     member.guild.channels.find('name', 'server-log').send({
       embed: {
         color: colors.blue,
@@ -47,13 +47,17 @@ exports.run = (bot, member) => {
     // Determine the superscript for the member count
     let superscript
     switch (count) {
-      case 1: superscript = 'st'
+      case 1:
+        superscript = 'st'
         break
-      case 2: superscript = 'nd'
+      case 2:
+        superscript = 'nd'
         break
-      case 3: superscript = 'rd'
+      case 3:
+        superscript = 'rd'
         break
-      default: superscript = 'th'
+      default:
+        superscript = 'th'
         break
     }
 
@@ -93,16 +97,13 @@ exports.run = (bot, member) => {
         thumbnail: {
           url: official.user.avatarURL
         },
-        fields: [
-          {
-            'name': 'Name',
-            'value': `${official.user.username}`
-          },
-          {
-            'name': 'Role',
-            'value': `${role}`
-          }
-        ]
+        fields: [{
+          'name': 'Name',
+          'value': `${official.user.username}`
+        }, {
+          'name': 'Role',
+          'value': `${role}`
+        }]
       }
     })
   }

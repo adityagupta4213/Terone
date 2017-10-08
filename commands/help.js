@@ -10,27 +10,25 @@ Object.keys(_colors).forEach(function (key) {
 exports.run = (bot, message, helpFor) => {
   helpFor = helpFor.join(' ')
   if (!helpFor) {
+    let fields = []
     for (let i in help) {
-      message.author.send({
-        embed: {
-          color: colors.blue,
-          description: `${help[i].description}`,
-          author: {
-            name: `${help[i].name}`
-          },
-          fields: [
-            {
-              'name': 'Syntax',
-              'value': `\`\`\`${help[i].syntax}\`\`\``
-            },
-            {
-              'name': 'Example',
-              'value': `\`\`\`${help[i].example}\`\`\``
-            }
-          ]
-        }
+      fields.push({
+        name: `${parseInt(i) + parseInt(1)}. ${help[i].name}`,
+        value: `${help[i].description}
+                \nSyntax: \`\`\`${help[i].syntax}\`\`\` Example: \`\`\`${help[i].example}\`\`\`
+               `
       })
     }
+    message.author.send({
+      embed: {
+        color: colors.blue,
+        description: `Here's the command guide\n\n`,
+        author: {
+          name: `COMMAND GUIDE`
+        },
+        fields: fields
+      }
+    })
     message.channel.send({
       embed: {
         color: colors.blue,

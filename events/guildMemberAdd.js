@@ -17,9 +17,14 @@ exports.run = (bot, member) => {
   }
 
   const guildID = member.guild.id
-  const settings = JSON.parse(fs.readFileSync(`./data/${guildID}.json`, 'utf8'))
+  const data = JSON.parse(fs.readFileSync(`./data/${guildID}.json`, 'utf8'))
+
+  if (data.autoroleID) {
+    member.setRoles([data.autoroleID])
+  }
+
   // If server log is enabled
-  if (settings.serverlog === 'true') {
+  if (data.serverlog) {
     member.guild.channels.find('name', 'server-log').send({
       embed: {
         color: colors.blue,
@@ -35,8 +40,8 @@ exports.run = (bot, member) => {
   }
 
   // Only if autowelcome is enabled
-  if (settings.autowelcome) {
-    const welcomeChannel = settings.welcomeChannel
+  if (data.autowelcome) {
+    const welcomeChannel = data.welcomeChannel
     let count = member.guild.memberCount
     // Get the last digit separated and +1 the count since the actual member count gets incremented by 1 when a new member joins
     count = count.toString().split('')

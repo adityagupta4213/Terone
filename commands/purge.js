@@ -7,6 +7,7 @@ exports.run = (bot, message, [deleteCount]) => {
     return message.reply('Please provide a number between 2 and 100 for the number of messages to delete')
   }
   // Get messages and delete them
+  deleteCount++ // Increment by one to also delete the command message
   message.channel.fetchMessages({ limit: deleteCount })
     .then(messages => message.channel.bulkDelete(messages))
     .catch(error => message.reply(`Couldn't delete messages because of: ${error}`))

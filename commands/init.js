@@ -1,6 +1,7 @@
 const fs = require('fs')
 const _colors = require('../colors.json')
 const config = require('../config.json')
+const initialData = require('../initialData.json')
 const requiredChannels = config.requiredChannels
 // Change string values to int from colors.json
 const colors = {}
@@ -9,16 +10,7 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 
-const initialData = {
-  'prefix': '++',
-  'serverlog': 'false',
-  'memberlog': 'false',
-  'welcomechannel': 'welcome',
-  'filterinvites': ["none"],
-  'filterlinks': ["none"]
-}
-
-exports.run = (bot, message, args) => {
+exports.run = (bot, message, [error]) => {
   const guild = message.guild
 
   fs.writeFile(`./data/${guild.id}.json`, JSON.stringify(initialData), err => {
@@ -31,17 +23,19 @@ exports.run = (bot, message, args) => {
       try {
         guild.createChannel(requiredChannels[i], 'text')
         didInit = true
-      }
-      catch (e) {
+      } catch (e) {
         console.log(e)
         didInit = false
       }
     }
   }
   if (didInit) {
-    return message.reply(`The server has been reinitialize. Use the \`settings\` command to view settings`)
-  }
-  else {
+    if (error) {
+      return message.reply(`The server has been reinitialized due to: ${error}. Please run the command again. I'm sorry for the inconvinience`)
+    } else {
+      return message.reply(`The server has been reinitialized. Use the \`settings\` command to view settings`)
+    }
+  } else {
     return message.reply('Initialization failed. Please check if I have administrative permissions.')
   }
 }

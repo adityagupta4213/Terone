@@ -11,8 +11,8 @@
   "dependencies": {
     "discord.js": "^11.1.0",
     "google-translate-api": "^2.3.0",
-    "iso-language-converter": "^1.1.0",
-    "paladins-api": "^1.4.8"
+    "hirez.js": "^2.0.0",
+    "iso-language-converter": "^1.1.0"
   },
   "devDependencies": {
     "standard": "^10.0.3"

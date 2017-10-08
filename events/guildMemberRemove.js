@@ -9,9 +9,9 @@ Object.keys(_colors).forEach(function (key) {
 exports.run = (bot, member) => {
   console.log(member.guild)
   const guildID = member.guild.id
-  const settings = JSON.parse(fs.readFileSync(`./data/${guildID}.json`, 'utf8'))
+  const data = JSON.parse(fs.readFileSync(`./data/${guildID}.json`, 'utf8'))
   // If server log is disabled, don't do anything
-  if (settings.serverlog === 'false') return
+  if (data.serverlog === 'false') return
   try {
     member.guild.channels.find('name', 'server-log').send({
       embed: {

@@ -16,7 +16,6 @@ exports.run = (bot, message) => {
   for (let i in _message) {
     for (let j in badwords) {
       if (_message[i] === badwords[j]) {
-        console.log(_message[i])
         message.delete()
         message.channel.send({
           embed: {
@@ -31,6 +30,7 @@ exports.run = (bot, message) => {
           }
 
         })
+        return
       }
     }
   }

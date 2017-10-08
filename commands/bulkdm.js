@@ -81,7 +81,7 @@ exports.run = (bot, message, args) => {
         }
       })
     } catch (e) {
-      console.log(e)
+      message.reply(`Couldn't send message due to: ${e}`)
     }
   }
 }

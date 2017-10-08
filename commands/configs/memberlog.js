@@ -1,7 +1,6 @@
 const fs = require('fs')
 
 exports.run = (bot, message, filepath, [value]) => {
-  console.log(value)
   if (value !== 'true' && value !== 'false') {
     return message.reply(`The value for this setting can either only be true or false.`)
   }

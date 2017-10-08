@@ -13,6 +13,7 @@ exports.run = (bot, message) => {
   }
 
   let role = message.mentions.roles.first()
+  if (!role) { return message.reply('You need to mention a valid role') }
   let roleName = role.name
   if (!role) {
     return message.reply('Please mention a valid role of this server mate!')
@@ -33,6 +34,6 @@ exports.run = (bot, message) => {
       }
     })
   } catch (e) {
-    console.log(e)
+    message.reply(`Couldn't delete role ${roleName} due to: ${e}`)
   }
 }

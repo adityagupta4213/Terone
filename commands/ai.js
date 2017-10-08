@@ -12,8 +12,6 @@ exports.run = (bot, message) => {
   let request = app.textRequest(`${_message}`, { sessionId: randomID })
 
   request.on('response', function (response) {
-    // Log all responses.
-    console.log(response)
     // Set response text equal to the output speech
     let responseText = response.result.fulfillment.speech
     // If response is not available, return default

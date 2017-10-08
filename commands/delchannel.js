@@ -6,12 +6,12 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 
-exports.run = (bot, message, [channelName, channelType]) => {
+exports.run = (bot, message, args) => {
   if (!message.member.hasPermission(['MANAGE_CHANNELS'])) {
     return message.channel.send(`${message.author} Trying to be sneaky eh? **You don't have the required permissions to manage roles!`)
   }
   let channel = message.mentions.channels.first()
-  console.log(channel)
+  if (!channel) { return message.reply('You need to mention a valid channel') }
   try {
     if (channel) {
       channel.delete()
@@ -28,6 +28,6 @@ exports.run = (bot, message, [channelName, channelType]) => {
         })
     } else message.channel.send(`**I can't really delete that channel mate!** Check if it even exists`)
   } catch (e) {
-    console.log(e)
+    message.reply(`Couldn't delete channel due to: ${e}`)
   }
 }

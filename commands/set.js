@@ -2,7 +2,7 @@ const filepath = `${__dirname}/../data/`
 
 exports.run = (bot, message, args) => {
   if (!message.member.hasPermission(['ADMINISTRATOR'])) {
-    return message.reply(`You don't have required permissions to manage my configuration`)
+    return message.reply(`You need to be the administrator of the server to manage my configuration`)
   }
   const config = args[0]
   const value = args.splice(1, args.length - 1)

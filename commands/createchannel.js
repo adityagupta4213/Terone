@@ -34,6 +34,6 @@ exports.run = (bot, message, [channelName, channelType]) => {
         })
     }
   } catch (e) {
-    console.log(e)
+    message.reply(`Couldn't create channel ${channelName} of type ${channelType} due to: ${e}`)
   }
 }

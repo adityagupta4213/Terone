@@ -70,8 +70,29 @@
     "example": "++purge 15"
   },
   {
+    "name": "Set",
+    "description": "Change server settings. Commands include:\n`filter`\n`memberlog`\n`serverlog`\n`prefix`\n`autorole`\n`autowelcome`",
+    "command": "set",
+    "syntax": "set <config name> <config type> <additional arguments>",
+    "example": "set filter links #channel true\nset filter invites #channel false```\n```set memberlog true```\n```set serverlog true```\n```set prefix !\n```set autorole @role```\n```set autowelcome true```"
+  },
+  {
+    "name": "Settings",
+    "description": "Get current settings for the server",
+    "command": "settings",
+    "syntax": "++settings",
+    "example": "++settings"
+  },
+  {
+    "name": "Init",
+    "description": "Reset all server settings for Terone",
+    "command": "init",
+    "syntax": "++init",
+    "example": "++init"
+  },
+  {
     "name": "Welcome",
-    "description": "Welcome a pre-existing member (new members are automatically welcomed)",
+    "description": "Welcome an existing member (new members are automatically welcomed)",
     "command": "welcome",
     "syntax": "++welcome <@membermention>",
     "example": "++welcome @member"
@@ -96,6 +117,13 @@
     "command": "weather",
     "syntax": "++weather <temperatureUnit (C/F)> <location w/out country code>",
     "example": "++weather c new york"
+  },
+  {
+    "name": "Avatar",
+    "description": "Get the avatar of a member",
+    "command": "avatar",
+    "syntax": "++avatar <member mention>",
+    "example": "++avatar @member"
   },
   {
     "name": "Contact Support",

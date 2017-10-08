@@ -20,41 +20,21 @@ fs.readdir('./events/', (err, files) => {
 })
 
 bot.on('message', message => {
-  // Load settings for the guild and fetch the prefix
   if (message.author.bot) return
-  let filepath = `${__dirname}/data/${message.guild.id}.json`
-  let settings
-  try {
-    settings = JSON.parse(fs.readFileSync(filepath, 'utf8'))
-  }
-  catch (e) {
-    console.log(e)
-    initialize.run(bot, message.guild)
-    settings = JSON.parse(fs.readFileSync(filepath, 'utf8'))
-  }
-
-  const prefix = settings.prefix
-
-  // Check for invite filtering
-  filterHandler.run(bot, message)
-
-  // If bot is mentioned but command is not given else if command is not given
-  if (message.isMentioned(bot.user) && message.content.indexOf(prefix) === -1) ai.run(bot, message)
-  else if (message.content.indexOf(prefix) === -1) return
-  // This is the best way to define args. Trust me.
-  let args = message.content.slice(prefix.length).trim().split(/ +/g)
-  let command = args.shift().toLowerCase()
-
-  for (let i in args) {
-    if (args[i].indexOf(prefix) !== -1 && command !== 'set') {
-      args = 0
-      command = 0
-      return message.reply('Incorrect syntax')
+  // Load settings for the guild and fetch the prefix
+  let prefix
+  if (message.guild) {
+    let filepath = `${__dirname}/data/${message.guild.id}.json`
+    let settings
+    try {
+      settings = JSON.parse(fs.readFileSync(filepath, 'utf8'))
+    } catch (e) {
+      console.log(e)
+      initialize.run(bot, message, 'Critical error')
     }
-  }
 
-  // If bot is in a DM channel and a command is received
-  if (!message.guild && message.content.indexOf(prefix) !== -1) {
+    prefix = settings.prefix
+  } else if (!message.guild && message.content.indexOf('++') !== -1) {
     return message.channel.send({
       embed: {
         color: parseInt(colors.yellow),
@@ -62,17 +42,33 @@ bot.on('message', message => {
       }
     })
   }
-  else {
-    try {
-      let commandFile = require(`./commands/${command}.js`)
-      commandFile.run(bot, message, args)
+
+  // Check for invite filtering
+  filterHandler.run(bot, message)
+
+  // If bot is mentioned but command is not given else if command is not given
+  if (message.isMentioned(bot.user) && message.content.indexOf(prefix) === -1) { return ai.run(bot, message) } else if (message.content.indexOf(prefix) === -1) return
+  // This is the best way to define args. Trust me.
+  let args = message.content.slice(prefix.length).trim().split(/ +/g)
+  let command = args.shift().toLowerCase()
+
+  // If a command other than "set" contains the prefix, declare invalid
+  for (let i in args) {
+    if (args[i].indexOf(prefix) !== -1 && command !== 'set') {
+      args = 0
+      command = 0
+      return message.reply('Incorrect syntax')
     }
-    catch (err) {
-      console.error(err)
-    }
-    // Check for profanity
-    checkProfanity.run(bot, message)
   }
+  try {
+    let commandFile = require(`./commands/${command}.js`)
+    commandFile.run(bot, message, args)
+  } catch (err) {
+    console.log(err)
+    message.reply('Command not found. Use the `++help` command to get my command guide delivered to your inbox')
+  }
+  // Check for profanity
+  checkProfanity.run(bot, message)
 })
 
 bot.login(config.token)

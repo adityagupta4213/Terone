@@ -7,21 +7,37 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 
-function convertChannelIdToName(message, channel) {
-  let _channel = message.guild.channels.find('id', channel)
-  return ` ${_channel}`
+function convertChannelIdToName (message, channels) {
+  let _channels = []
+  let _channel
+  // map wasn't used since it can't handle null values
+  for (let i in channels) {
+    if (channels[i]) {
+      _channel = message.guild.channels.find('id', channels[i])
+      _channels.push(_channel)
+    }
+  }
+  if (_channels.length > 0) return _channels
+  else return 'None'
 }
 
-function convertBooltoEmoji(value) {
-  return value == 'true' ? `:white_check_mark:` : `:x:`
+function convertBooltoEmoji (value) {
+  return value === 'true' ? `:white_check_mark:` : `:x:`
 }
 
 exports.run = (bot, message, args) => {
-  const settings = JSON.parse(fs.readFileSync(`./data/${message.guild.id}.json`, 'utf8'))
+  const data = JSON.parse(fs.readFileSync(`./data/${message.guild.id}.json`, 'utf8'))
+  let filterinvites = convertChannelIdToName(message, data.filterinvites)
+  let filterlinks = convertChannelIdToName(message, data.filterlinks)
+
+  let autoRole = message.guild.roles.find('id', data.autoroleID)
+
+  if (!autoRole) { autoRole = 'Not set' }
+
   message.channel.send({
     embed: {
       color: colors.blue,
-      description: `Server settings for Terone`,
+      description: `Server data for Terone`,
       thumbnail: {
         url: message.guild.iconURL
       },
@@ -29,28 +45,38 @@ exports.run = (bot, message, args) => {
         name: 'SETTINGS'
       },
       fields: [{
-          'name': 'Prefix',
-          'value': `${settings.prefix}`
-        }, {
-          'name': 'Server Log',
-          'value': `${convertBooltoEmoji(settings.serverlog)}`,
-          'inline': true
-        }, {
-          'name': 'Member Log',
-          'value': `${convertBooltoEmoji(settings.memberlog)}`,
-          'inline': true
-        }, {
-          'name': 'Welcome Channel',
-          'value': `${message.guild.channels.find('name', settings.welcomechannel)}`
-        }, {
-          'name': 'Filter Invites',
-          'value': `${settings.filterinvites.map(channel=>convertChannelIdToName(message, channel))}`,
-          'inline': true
-        }, {
-          'name': 'Filter Links',
-          'value': `${settings.filterlinks.map(channel=>convertChannelIdToName(message, channel))}`,
-          'inline': true
-        },
+        'name': 'Prefix',
+        'value': `${data.prefix}`,
+        'inline': true
+      }, {
+        'name': 'Welcome Channel',
+        'value': `${message.guild.channels.find('name', data.welcomechannel)}`,
+        'inline': true
+      }, {
+        'name': 'Automatic Role',
+        'value': `${autoRole}`,
+        'inline': true
+      }, {
+        'name': 'Server Log',
+        'value': `${convertBooltoEmoji(data.serverlog)}`,
+        'inline': true
+      }, {
+        'name': 'Member Log',
+        'value': `${convertBooltoEmoji(data.memberlog)}`,
+        'inline': true
+      }, {
+        'name': 'Automatic Welcome',
+        'value': `${convertBooltoEmoji(data.autowelcome)}`,
+        'inline': true
+      }, {
+        'name': 'Filter Invites',
+        'value': `${filterinvites}`,
+        'inline': true
+      }, {
+        'name': 'Filter Links',
+        'value': `${filterlinks}`,
+        'inline': true
+      }
 
       ]
     }

@@ -1,3 +1,4 @@
+const fs = require('fs')
 const config = require('../config.json')
 const _colors = require('../colors.json')
 // Change string values to int from colors.json
@@ -8,6 +9,11 @@ Object.keys(_colors).forEach(function (key) {
 })
 
 exports.run = (bot, guild) => {
+  try {
+    fs.unlink(`${__dirname}/../data/${guild.id}.json`)
+  } catch (e) {
+    console.log(e)
+  }
   bot.channels.find('id', config.teroneLog).send({
     embed: {
       color: colors.red,

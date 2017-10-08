@@ -51,8 +51,15 @@ exports.run = (bot, message) => {
           'name': 'Roles',
           'value': `${guild.roles.size}`,
           'inline': true
+        },
+        {
+          'name': 'Server Image URL',
+          'value': `${guild.iconURL}`
         }
-      ]
+      ],
+      image: {
+        url: guild.iconURL
+      }
     }
   })
 }

@@ -28,13 +28,15 @@ bot.on('message', message => {
     let settings
     try {
       settings = JSON.parse(fs.readFileSync(filepath, 'utf8'))
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e)
       initialize.run(bot, message, 'Critical error')
     }
 
     prefix = settings.prefix
-  } else if (!message.guild && message.content.indexOf('++') !== -1) {
+  }
+  else if (!message.guild && message.content.indexOf('++') !== -1) {
     return message.channel.send({
       embed: {
         color: parseInt(colors.yellow),
@@ -47,7 +49,10 @@ bot.on('message', message => {
   filterHandler.run(bot, message)
 
   // If bot is mentioned but command is not given else if command is not given
-  if (message.isMentioned(bot.user) && message.content.indexOf(prefix) === -1) { return ai.run(bot, message) } else if (message.content.indexOf(prefix) === -1) return
+  if (message.isMentioned(bot.user) && message.content.indexOf(prefix) === -1) {
+    return ai.run(bot, message)
+  }
+  else if (message.content.charAt(0) == prefix.charAt(0)) return
   // This is the best way to define args. Trust me.
   let args = message.content.slice(prefix.length).trim().split(/ +/g)
   let command = args.shift().toLowerCase()
@@ -63,7 +68,8 @@ bot.on('message', message => {
   try {
     let commandFile = require(`./commands/${command}.js`)
     commandFile.run(bot, message, args)
-  } catch (err) {
+  }
+  catch (err) {
     console.log(err)
     message.reply('Command not found. Use the `++help` command to get my command guide delivered to your inbox')
   }

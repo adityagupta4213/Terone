@@ -9,7 +9,7 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 
-exports.run = (bot, oldMember, newMember) => {
+function memberLog (bot, oldMember, newMember) {
   if (oldMember.presence.status !== newMember.presence.status) {
     const statusColors = {
       online: colors.green,
@@ -35,4 +35,8 @@ exports.run = (bot, oldMember, newMember) => {
       console.log(e)
     }
   }
+}
+
+exports.run = (bot, oldMember, newMember) => {
+  return 'PRESENCE UPDATED'
 }

@@ -4,31 +4,34 @@ exports.run = (bot, message, filepath, [type, _channel, action]) => {
   const channel = message.mentions.channels.first()
   const channelID = channel.id
   if (!channel) {
-    return message.reply(`Please specify a channel to filter invites from.`)
+    return message.reply(`Please specify a channel to filter ${type} from.`)
   }
   const guild = message.guild
   let data = JSON.parse(fs.readFileSync(`${filepath}${guild.id}.json`, 'utf8'))
   let filterType = `filter${type}`
 
-  if (action === 'add') {
+  if (action === 'on') {
     for (let i in data[filterType]) {
       if (channelID === data[filterType][i]) {
         return message.reply(`Channel **${channel.name}** already exists`)
       }
     }
     data[filterType].push(channelID)
-  } else if (action === 'remove') {
+  }
+  else if (action === 'off') {
     const index = data[filterType].indexOf(channelID)
     if (index !== -1) {
       data[filterType].splice(index, 1)
-    } else {
+    }
+    else {
       return message.reply(`Channel **${channel.name}** was not found in the ${type} filter`)
     }
-  } else {
+  }
+  else {
     return message.reply('Invalid action')
   }
 
-  let responseMessage = action === 'add' ? 'added' : 'removed'
+  let responseMessage = action === 'on' ? 'turned on' : 'turned off'
   fs.writeFile(`${filepath}${guild.id}.json`, JSON.stringify(data), err => {
     if (!err) message.reply(`${type} filter: channel **${channel.name}** was successfully **${responseMessage}**`)
   })

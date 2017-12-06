@@ -1,11 +1,13 @@
 {
   "prefix": "++",
+  "mPrefix": "--",
   "serverlog": "false",
   "memberlog": "false",
   "welcomechannel": "welcome",
   "filterinvites": [],
   "filterlinks": [],
-  "contactedSupportTimestamp": "",
+  "filterprofanity": [],
+  "contactedSupportTimestamp": null,
   "autowelcome": "true",
-  "autoroleID": ""
+  "autoroleID": null
 }

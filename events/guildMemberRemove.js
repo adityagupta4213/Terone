@@ -16,13 +16,14 @@ exports.run = (bot, member) => {
     member.guild.channels.find('name', 'server-log').send({
       embed: {
         color: colors.red,
-        description: `${member.user} has left the server`,
+        description: `${member.user.name} has left the server`,
         author: {
           name: 'MEMBER LEFT'
         }
       }
     })
-  } catch (e) {
+  }
+  catch (e) {
     console.log(e)
   }
 }

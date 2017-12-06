@@ -1,4 +1,5 @@
 const Discord = require('discord.js')
+const Music = require('discord.js-musicbot-addon')
 const fs = require('fs')
 const config = require('./config.json')
 const ai = require('./commands/ai.js')
@@ -7,7 +8,21 @@ const checkProfanity = require('./commands/checkProfanity.js')
 const filterHandler = require('./commands/filterHandler.js')
 const colors = require('./colors.json')
 
-const bot = new Discord.Client()
+const bot = new Discord.Client({
+  autoReconnect: true
+})
+const music = new Music(bot, {
+  prefix: config.mPrefix,
+  maxQueueSize: "100",
+  helpCmd: 'mhelp',
+  playCmd: 'play',
+  enableQueueStat: true,
+  leaveCmd: 'leave',
+  ownerOverMember: true,
+  requesterName: true,
+  botOwner: config.owner.id,
+  youtubeKey: config.youtube
+})
 
 fs.readdir('./events/', (err, files) => {
   if (err) return console.error(err)
@@ -22,7 +37,13 @@ fs.readdir('./events/', (err, files) => {
 bot.on('message', message => {
   if (message.author.bot) return
   // Load settings for the guild and fetch the prefix
+
+  // Check for filters
+  filterHandler.run(bot, message)
+  checkProfanity.run(bot, message)
+
   let prefix
+  let mPrefix
   if (message.guild) {
     let filepath = `${__dirname}/data/${message.guild.id}.json`
     let settings
@@ -34,9 +55,14 @@ bot.on('message', message => {
       initialize.run(bot, message, 'Critical error')
     }
 
-    prefix = settings.prefix
+    try {
+      prefix = settings.prefix
+      mPrefix = settings.mPrefix
+    } catch(e) {
+      console.log('Error', e, 'SERVER', message.guild.name)
+    }
   }
-  else if (!message.guild && message.content.indexOf('++') !== -1) {
+  else if (!message.guild && message.content.indexOf(prefix) !== -1) {
     return message.channel.send({
       embed: {
         color: parseInt(colors.yellow),
@@ -44,15 +70,12 @@ bot.on('message', message => {
       }
     })
   }
-
-  // Check for invite filtering
-  filterHandler.run(bot, message)
-
   // If bot is mentioned but command is not given else if command is not given
   if (message.isMentioned(bot.user) && message.content.indexOf(prefix) === -1) {
     return ai.run(bot, message)
   }
-  else if (message.content.charAt(0) == prefix.charAt(0)) return
+  // If both, prefix and music prefix aren't present
+  else if (message.content.indexOf(prefix) === -1 && message.content.indexOf(mPrefix) === -1) return
   // This is the best way to define args. Trust me.
   let args = message.content.slice(prefix.length).trim().split(/ +/g)
   let command = args.shift().toLowerCase()
@@ -65,13 +88,15 @@ bot.on('message', message => {
       return message.reply('Incorrect syntax')
     }
   }
-  try {
-    let commandFile = require(`./commands/${command}.js`)
-    commandFile.run(bot, message, args)
-  }
-  catch (err) {
-    console.log(err)
-    message.reply('Command not found. Use the `++help` command to get my command guide delivered to your inbox')
+  if (message.content.indexOf(mPrefix) === -1) {
+    try {
+      let commandFile = require(`./commands/${command}.js`)
+      commandFile.run(bot, message, args)
+    }
+    catch (err) {
+      console.log(err)
+      message.reply('Command not found. Use the `${prefix}help` command to get my command guide delivered to your inbox')
+    }
   }
   // Check for profanity
   checkProfanity.run(bot, message)

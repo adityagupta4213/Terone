@@ -36,45 +36,43 @@ exports.run = (bot, guild) => {
     }
   })
 
-  fs.writeFile(`./data/${guild.id}.json`, JSON.stringify(initialData), err => {
-    console.log(err)
+
+  fs.writeFile(`./data/${guild.id}.json`, JSON.stringify(initialData), error => {
+    console.log(error)
   })
 
-  try {
-    let didInit = true
-    for (let i in requiredChannels) {
-      if (!guild.channels.exists('name', requiredChannels[i])) {
-        try {
-          guild.createChannel(requiredChannels[i], 'text')
-          didInit = true
-        } catch (e) {
-          console.log(e)
-          didInit = false
-        }
+  let didInit = true
+  for (let i in requiredChannels) {
+    if (!guild.channels.exists('name', requiredChannels[i])) {
+      try {
+        guild.createChannel(requiredChannels[i], 'text')
+        didInit = true
+      }
+      catch (e) {
+        console.log(e)
+        didInit = false
       }
     }
-    if (didInit) {
-      return guild.channels.find('name', 'general').send(`Hi everyone. I'm Terone, a new member of this awesome server! Glad that you invited me. Use the \`help\` command to get the command guide delivered to your inbox.\n\nHave a nice day!`)
-    } else {
-      // If automatic initialization failed
-      return guild.channels.find('name', 'general').send({
-        embed: {
-          color: colors.red,
-          description: '**Automatic initialization failed. Please provide me administrative permissions and run the following command.**',
-          author: {
-            name: 'INITIALIZATION ERROR'
-          },
-          fields: [{
-            'name': 'Command',
-            'value': '++init'
-          }, {
-            'name': 'Explanation',
-            'value': 'Type the above command in order to perform a crucial initialization process of creating some required channels and setting up server configurations.'
-          }]
-        }
-      })
-    }
-  } catch (e) {
-    guild.channels.find('name', 'general').send(`Automatic initialization failed. Please check if I have required permissions and run the \`++init\` command. Error: ${e}`)
+  }
+  if (didInit) {
+    return guild.channels.find('name', 'general').send(`Hi everyone. I'm Terone, a new member of this awesome server! Glad that you invited me. Use the \`++help\` command to get the command guide delivered to your inbox.\n\nHave a nice day!`)
+  }
+  else {
+    return guild.channels.find('name', 'general').send({
+      embed: {
+        color: colors.red,
+        description: '**Automatic initialization failed. Please provide me administrative permissions and run the following command.**',
+        author: {
+          name: 'INITIALIZATION ERROR'
+        },
+        fields: [{
+          'name': 'Command',
+          'value': '++init'
+        }, {
+          'name': 'Explanation',
+          'value': 'Type the above command in order to perform a crucial initialization process of creating some required channels and setting up server configurations.'
+        }]
+      }
+    })
   }
 }

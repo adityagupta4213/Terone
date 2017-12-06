@@ -28,7 +28,7 @@ exports.run = (bot, member) => {
     member.guild.channels.find('name', 'server-log').send({
       embed: {
         color: colors.blue,
-        description: `${member.user} has joined the server`,
+        description: `${member.user.name} has joined the server`,
         thumbnail: {
           url: bot.user.avatarURL
         },
@@ -52,18 +52,18 @@ exports.run = (bot, member) => {
     // Determine the superscript for the member count
     let superscript
     switch (count) {
-      case 1:
-        superscript = 'st'
-        break
-      case 2:
-        superscript = 'nd'
-        break
-      case 3:
-        superscript = 'rd'
-        break
-      default:
-        superscript = 'th'
-        break
+    case 1:
+      superscript = 'st'
+      break
+    case 2:
+      superscript = 'nd'
+      break
+    case 3:
+      superscript = 'rd'
+      break
+    default:
+      superscript = 'th'
+      break
     }
 
     try {
@@ -79,12 +79,13 @@ exports.run = (bot, member) => {
           }
         }
       })
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e)
     }
   }
 
-  function welcomeOfficial (official) {
+  function welcomeOfficial(official) {
     let role
     // Find the staff official's role
     for (let i in staff) {

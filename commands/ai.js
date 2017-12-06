@@ -1,9 +1,24 @@
 const config = require('../config.json')
 const apiai = require('apiai')
 const app = apiai(config.apiaiToken)
-const profanity = require('./checkProfanity.js')
+const fs = require('fs')
 
 exports.run = (bot, message) => {
+
+ let settings
+  try {
+    settings = JSON.parse(fs.readFileSync(`./data/${message.guild.id}.json`, 'utf8'))
+  }
+  catch (e) {
+    console.log(e)
+  }
+  if (!settings) {
+    return
+  }
+
+  if (message.content.indexOf('prefix') !== -1) {
+    return message.reply(`The current prefix is: **${settings.prefix}**`)
+  }
   // Remove the bot mention from the message
   let _message = message.content.split(' ').slice(1).join(' ')
   // Generate a random session ID

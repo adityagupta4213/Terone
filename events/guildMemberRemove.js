@@ -16,7 +16,10 @@ exports.run = (bot, member) => {
     member.guild.channels.find('name', 'server-log').send({
       embed: {
         color: colors.red,
-        description: `${member.user.name} has left the server`,
+        description: `${member.user.username} has left the server`,
+        thumbnail: {
+          url: member.user.avatarURL
+        },
         author: {
           name: 'MEMBER LEFT'
         }

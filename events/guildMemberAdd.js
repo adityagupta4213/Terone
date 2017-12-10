@@ -9,13 +9,6 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 exports.run = (bot, member) => {
-  // Check if member is a Terone official
-  for (let i in staff) {
-    if (member.id === staff[i].userID) {
-      welcomeOfficial(member)
-    }
-  }
-
   const guildID = member.guild.id
   const data = JSON.parse(fs.readFileSync(`./data/${guildID}.json`, 'utf8'))
 
@@ -28,9 +21,9 @@ exports.run = (bot, member) => {
     member.guild.channels.find('name', 'server-log').send({
       embed: {
         color: colors.blue,
-        description: `${member.user.name} has joined the server`,
+        description: `${member.user.username} has joined the server`,
         thumbnail: {
-          url: bot.user.avatarURL
+          url: member.user.avatarURL
         },
         author: {
           name: 'MEMBER JOINED'
@@ -41,7 +34,7 @@ exports.run = (bot, member) => {
 
   // Only if autowelcome is enabled
   if (data.autowelcome) {
-    const welcomeChannel = data.welcomeChannel
+    const welcomeChannel = data.welcomechannel
     let count = member.guild.memberCount
     // Get the last digit separated and +1 the count since the actual member count gets incremented by 1 when a new member joins
     count = count.toString().split('')
@@ -70,7 +63,7 @@ exports.run = (bot, member) => {
       member.guild.channels.find('name', welcomeChannel).send({
         embed: {
           color: colors.blue,
-          description: `**Welcome** ${member.user} !You are the ${member.guild.memberCount + 1}${superscript} member!`,
+          description: `**Welcome** ${member.user}! You are the ${member.guild.memberCount + 1}${superscript} member!`,
           thumbnail: {
             url: member.user.avatarURL
           },
@@ -82,6 +75,13 @@ exports.run = (bot, member) => {
     }
     catch (e) {
       console.log(e)
+    }
+  }
+
+  // Check if member is a Terone official
+  for (let i in staff) {
+    if (member.id === staff[i].userID) {
+      welcomeOfficial(member)
     }
   }
 

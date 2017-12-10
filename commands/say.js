@@ -8,7 +8,7 @@ Object.keys(_colors).forEach(function (key) {
 
 exports.run = (bot, message, [...string]) => {
   if (!string)
-    return message.reply(`There's nothing to say. Please provide a message.`)
+    return
   string = string.join(' ')
   message.channel.send({
     embed: {

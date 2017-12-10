@@ -8,7 +8,7 @@ exports.run = (bot, message, filepath, [args]) => {
     return message.reply(`Please specify an existing channel to automatically welcome new users`)
   }
 
-  data.welcomechannel = channel.id
+  data.welcomechannel = channel.name
 
   fs.writeFile(`${filepath}${guild.id}.json`, JSON.stringify(data), err => {
     if (!err) message.reply(`**Automatic Welcome Channel** was successfully set to **${channel.name}**`)

@@ -12,20 +12,16 @@ exports.run = (bot, message) => {
   }
 
   const filterInviteChannels = settings.filterinvites
-  const content = message.content.toLowerCase().split(' ').join('')
-  let isLink = false 
-  let isFilter = false
   if (filterInviteChannels) {
+    let discordInvite = /(https:\/\/)?(www\.)?(discord\.gg|discord\.me|discordapp\.com\/invite|discord\.com\/invite)\/([a-z0-9-.]+)?/i
     try {
       for (let i in filterInviteChannels) {
         // Check if channel is in filter invites array and message is an invite
-        if (message.channel.id === filterInviteChannels[i] && content.indexOf('https://discord.gg/') !== -1) {
+        if (message.channel.id === filterInviteChannels[i] && discordInvite.test(message.content)) {
           message.delete()
-	  isFilter = true
-	}
+          return message.reply('This channel does not allow sending invites')
+        }
       }
-      if (isFilter) 
-	return message.reply('This channel does not allow sending invites')
     }
     catch (e) {
       console.log(e)
@@ -36,15 +32,15 @@ exports.run = (bot, message) => {
   const filterLinkChannels = settings.filterlinks
   if (filterLinkChannels) {
     try {
+      let links = message.content.match(/(http[s]?:\/\/)[(www\.)]?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/gi)
       for (let i in filterLinkChannels) {
-        if (message.channel.id === filterLinkChannels[i] && content.indexOf('http') !== -1 || content.indexOf('www') !== -1) {
-          message.delete()   
-	  isLink = true       
+        if (message.channel.id === filterLinkChannels[i]) {
+          if (links) {
+            message.delete()
+            return message.reply('This channel does not allow sending links')
+          }
         }
       }
-      if (isLink) 
-	return message.reply('This channel does not allow sending invites')
-
     }
     catch (e) {
       console.log(e)

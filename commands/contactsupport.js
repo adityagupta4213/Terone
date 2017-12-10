@@ -15,7 +15,7 @@ exports.run = (bot, message, args) => {
     return message.reply('Only the administrators can request support from officials')
   }
   const data = JSON.parse(fs.readFileSync(`./data/${message.guild.id}.json`, 'utf8'))
-  const leastTime = 1000 * 60 * 3   // 3 mins
+  const leastTime = 1000 * 60 * 3 // 3 mins
 
   console.log(data)
 
@@ -28,7 +28,9 @@ exports.run = (bot, message, args) => {
       console.log(err)
     })
 
-    message.channel.createInvite({ maxAge: 0 }).then((invite) => {
+    message.channel.createInvite({
+      maxAge: 0
+    }).then((invite) => {
       for (let i in staff) {
         bot.fetchUser(staff[i].userID).then((user) => {
           // Send support request
@@ -39,27 +41,24 @@ exports.run = (bot, message, args) => {
               author: {
                 name: `SUPPORT REQUEST`
               },
-              fields: [
-                {
-                  'name': 'Name',
-                  'value': `${message.author}`
-                },
-                {
-                  'name': 'Server',
-                  'value': `${message.guild.name}`
-                },
-                {
-                  'name': 'Invite',
-                  'value': `${invite}`
-                }
-              ]
+              fields: [{
+                'name': 'Name',
+                'value': `${message.author.username}`
+              }, {
+                'name': 'Server',
+                'value': `${message.guild.name}`
+              }, {
+                'name': 'Invite',
+                'value': `${invite}`
+              }]
             }
           })
         })
       }
     })
     message.reply(`I've requested my staff to attend your issue. To canel the request, type ++cancelsupport.`)
-  } else {
+  }
+  else {
     return message.reply('You need to wait at least 3 minutes before sending a support request again')
   }
 }

@@ -17,13 +17,11 @@ exports.run = (bot, oldMember, newMember) => {
     let settings
     try {
       settings = JSON.parse(fs.readFileSync(`./data/${newMember.guild.id}.json`, 'utf8'))
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e)
     }
     memberLog = settings.memberlog
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e)
   }
   if (memberLog !== 'false') {
@@ -50,8 +48,7 @@ exports.run = (bot, oldMember, newMember) => {
             }
           }
         })
-      }
-      catch (e) {
+      } catch (e) {
         console.log(e)
       }
     }
@@ -71,8 +68,7 @@ exports.run = (bot, oldMember, newMember) => {
               }
             }
           })
-        }
-        catch (e) {
+        } catch (e) {
           console.log(e)
         }
       }
@@ -92,8 +88,7 @@ exports.run = (bot, oldMember, newMember) => {
             }
           }
         })
-      }
-      catch (e) {
+      } catch (e) {
         console.log(e)
       }
     }
@@ -113,8 +108,7 @@ exports.run = (bot, oldMember, newMember) => {
             }
           }
         })
-      }
-      catch (e) {
+      } catch (e) {
         console.log(e)
       }
     }

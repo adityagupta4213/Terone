@@ -9,7 +9,7 @@ Object.keys(_colors).forEach(function (key) {
 
 exports.run = (bot, message, args) => {
   const user = message.mentions.users.first()
-  if (!user) return message.reply('Mention a user to get the avatar from')
+  if (!user) return message.reply('Mention a valid user to get the avatar from')
   if (!user.avatarURL) user.avatarURL = user.defaultAvatarURL
   message.channel.send({
     embed: {

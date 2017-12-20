@@ -17,16 +17,16 @@ exports.run = (bot, oldMember, newMember) => {
     let settings
     try {
       settings = JSON.parse(fs.readFileSync(`./data/${newMember.guild.id}.json`, 'utf8'))
-    } catch (e) {
+    }    catch (e) {
       console.log(e)
     }
     memberLog = settings.memberlog
-  } catch (e) {
+  }  catch (e) {
     console.log(e)
   }
   if (memberLog !== 'false') {
     // User status updates
-    if (oldMember.presence.status !== newMember.presence.status) {
+    /*if (oldMember.presence.status !== newMember.presence.status) {
       const statusColors = {
         online: colors.green,
         offline: colors.grey,
@@ -48,10 +48,11 @@ exports.run = (bot, oldMember, newMember) => {
             }
           }
         })
-      } catch (e) {
+      }
+      catch (e) {
         console.log(e)
       }
-    }
+    } */
     // User game updates
     if (oldMember.presence.game !== newMember.presence.game) {
       if (newMember.presence.game) {
@@ -68,7 +69,7 @@ exports.run = (bot, oldMember, newMember) => {
               }
             }
           })
-        } catch (e) {
+        }        catch (e) {
           console.log(e)
         }
       }
@@ -88,7 +89,7 @@ exports.run = (bot, oldMember, newMember) => {
             }
           }
         })
-      } catch (e) {
+      }      catch (e) {
         console.log(e)
       }
     }
@@ -108,7 +109,7 @@ exports.run = (bot, oldMember, newMember) => {
             }
           }
         })
-      } catch (e) {
+      }      catch (e) {
         console.log(e)
       }
     }

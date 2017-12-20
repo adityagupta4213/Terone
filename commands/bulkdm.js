@@ -19,27 +19,29 @@ exports.run = (bot, message, args) => {
   }
   _message = _message.join(' ')
 
+  if (!_message) {
+    return message.reply('Please specify a message for sending')
+  }
+
   // Get the snowflake separated
   let users = args.splice(1, args.length)
-  let isEveryoneMentioned = false
 
   // If everyone is mentioned, find every member of the guild and push their user ID to users array
-  if (users[0] === '@everyone') {
-    isEveryoneMentioned = true
+  if (message.mentions.everyone) {
     message.guild.fetchMembers().then(guild => {
       users = guild.members.keyArray()
       sendMsg(users)
     })
   }
   // Only separate IDs from mentions if @everyone is not mentioned
-  if (!isEveryoneMentioned) {
+  if (!message.mentions.everyone) {
     for (let i in users) {
       users[i] = users[i].split('').splice(2, users[i].length - 3).join('')
     }
     sendMsg(users)
   }
   // Find every user in the array and sent them the message
-  function sendMsg (users) {
+  function sendMsg(users) {
     try {
       for (let i in users) {
         bot.fetchUser(users[i]).then(user => {
@@ -50,20 +52,16 @@ exports.run = (bot, message, args) => {
               author: {
                 name: 'DM from Administrator'
               },
-              fields: [
-                {
-                  name: 'Server',
-                  value: `${message.guild.name}`
-                },
-                {
-                  name: 'Message',
-                  value: `${_message}`
-                },
-                {
-                  name: 'Time',
-                  value: `${new Date(message.createdTimestamp)}`
-                }
-              ]
+              fields: [{
+                name: 'Server',
+                value: `${message.guild.name}`
+              }, {
+                name: 'Message',
+                value: `${_message}`
+              }, {
+                name: 'Time',
+                value: `${new Date(message.createdTimestamp)}`
+              }]
             }
           })
         })
@@ -80,7 +78,8 @@ exports.run = (bot, message, args) => {
           description: `Bulk DM sent successfully`
         }
       })
-    } catch (e) {
+    }
+    catch (e) {
       message.reply(`Couldn't send message due to: ${e}`)
     }
   }

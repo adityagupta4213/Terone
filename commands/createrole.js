@@ -16,12 +16,15 @@ exports.run = (bot, message, [name, color]) => {
   }
   if (!color) {
     color = 'DEFAULT'
-  } else {
+  }
+  else if (color) {
     color.toUpperCase()
   }
   message.guild.createRole({
-    name, color, mentionable: true
-  })
+      name,
+      color,
+      mentionable: true
+    })
     .then(() => {
       message.guild.channels.find('name', 'server-log').send({
         embed: {

@@ -13,7 +13,7 @@ const bot = new Discord.Client({
 })
 const music = new Music(bot, {
   prefix: config.mPrefix,
-  maxQueueSize: "100",
+  maxQueueSize: '200',
   helpCmd: 'mhelp',
   playCmd: 'play',
   enableQueueStat: true,
@@ -49,8 +49,7 @@ bot.on('message', message => {
     let settings
     try {
       settings = JSON.parse(fs.readFileSync(filepath, 'utf8'))
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e)
       initialize.run(bot, message, 'Critical error')
     }
@@ -58,11 +57,10 @@ bot.on('message', message => {
     try {
       prefix = settings.prefix
       mPrefix = settings.mPrefix
-    } catch(e) {
+    } catch (e) {
       console.log('Error', e, 'SERVER', message.guild.name)
     }
-  }
-  else if (!message.guild && message.content.indexOf(prefix) !== -1) {
+  } else if (!message.guild && message.content.indexOf(prefix) !== -1) {
     return message.channel.send({
       embed: {
         color: parseInt(colors.yellow),
@@ -71,29 +69,28 @@ bot.on('message', message => {
     })
   }
   // If bot is mentioned but command is not given else if command is not given
-  if (message.isMentioned(bot.user) && message.content.indexOf(prefix) === -1) {
+  if (message.isMentioned(bot.user) && !message.content.startsWith(prefix)) {
     return ai.run(bot, message)
   }
   // If both, prefix and music prefix aren't present
-  else if (message.content.indexOf(prefix) === -1 && message.content.indexOf(mPrefix) === -1) return
+  else if (!message.content.startsWith(prefix) && !message.content.startsWith(mPrefix)) return
   // This is the best way to define args. Trust me.
   let args = message.content.slice(prefix.length).trim().split(/ +/g)
   let command = args.shift().toLowerCase()
 
   // If a command other than "set" contains the prefix, declare invalid
   for (let i in args) {
-    if (args[i].indexOf(prefix) !== -1 && command !== 'set') {
+    if (args[i].startsWith(prefix) && command !== 'set') {
       args = 0
       command = 0
       return message.reply('Incorrect syntax')
     }
   }
-  if (message.content.indexOf(mPrefix) === -1) {
+  if (!message.content.startsWith(mPrefix)) {
     try {
       let commandFile = require(`./commands/${command}.js`)
       commandFile.run(bot, message, args)
-    }
-    catch (err) {
+    } catch (err) {
       console.log(err)
       message.reply('Command not found. Use the `${prefix}help` command to get my command guide delivered to your inbox')
     }

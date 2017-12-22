@@ -4,12 +4,10 @@ const app = apiai(config.apiaiToken)
 const fs = require('fs')
 
 exports.run = (bot, message) => {
-
- let settings
+  let settings
   try {
     settings = JSON.parse(fs.readFileSync(`./data/${message.guild.id}.json`, 'utf8'))
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e)
   }
   if (!settings) {

@@ -5,11 +5,11 @@ exports.run = (bot, message, args) => {
     return message.reply(`You need to be the administrator of the server to manage my configuration`)
   }
   const config = args[0]
-  const value = args.splice(1, args.length - 1)
+  args = args.splice(1, args.length)
 
   try {
-    let configFile = require(`./configs/${config}.js`)
-    configFile.run(bot, message, filepath, value)
+    let configFile = require(`./roleConfigs/${config}.js`)
+    configFile.run(bot, message, filepath, args)
   } catch (err) {
     console.error(err)
   }

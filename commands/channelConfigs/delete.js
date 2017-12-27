@@ -1,4 +1,4 @@
-const _colors = require('../colors.json')
+const _colors = require('../../colors.json')
 // Change string values to int from colors.json
 const colors = {}
 Object.keys(_colors).forEach(function (key) {

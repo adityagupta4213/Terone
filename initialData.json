@@ -9,5 +9,6 @@
   "filterprofanity": [],
   "contactedSupportTimestamp": null,
   "autowelcome": "true",
-  "autoroleID": null
+  "autoroleID": null,
+  "ign": []
 }

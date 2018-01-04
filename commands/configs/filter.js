@@ -17,17 +17,14 @@ exports.run = (bot, message, filepath, [type, _channel, action]) => {
       }
     }
     data[filterType].push(channelID)
-  }
-  else if (action === 'off') {
+  } else if (action === 'off') {
     const index = data[filterType].indexOf(channelID)
     if (index !== -1) {
       data[filterType].splice(index, 1)
-    }
-    else {
+    } else {
       return message.reply(`Channel **${channel.name}** was not found in the ${type} filter`)
     }
-  }
-  else {
+  } else {
     return message.reply('Invalid action')
   }
 

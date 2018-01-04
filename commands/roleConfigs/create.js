@@ -15,7 +15,7 @@ exports.run = (bot, message, filepath, args) => {
     }
     if (!color) {
       color = 'DEFAULT'
-    } else if (color) {
+    } else {
       color = color.toUpperCase()
     }
     if (message.guild.roles.find('name', name)) {

@@ -136,4 +136,10 @@
   "command": "mhelp",
   "syntax": "--mhelp",
   "example": "--mhelp"
+}, {
+  "name": "IGN",
+  "description": "Store, display and remove your IGNs. Commands include ```add\ndelete\nshow```",
+  "command": "ign",
+  "syntax": "ign <argument> <game name | all>",
+  "example": "++ign add @game myIGN\n++ign delete @game myIGN\n++ign show @game\n++ign show all"
 }]

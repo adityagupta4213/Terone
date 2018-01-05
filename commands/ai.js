@@ -3,6 +3,13 @@ const apiai = require('apiai')
 const app = apiai(config.apiaiToken)
 const fs = require('fs')
 const DDG = require('node-ddg-api').DDG
+const _colors = require('../colors.json')
+// Change string values to int from colors.json
+const colors = {}
+Object.keys(_colors).forEach(function (key) {
+  let value = _colors[key]
+  colors[key] = parseInt(value)
+})
 
 exports.run = (bot, message) => {
   let settings
@@ -32,12 +39,12 @@ exports.run = (bot, message) => {
       ddg.instantAnswer(_message, {skip_disambig: '0'}, function (err, response) {
         if (err) console.log(err)
         if (response.AbstractText !== '') {
-          return message.reply(response.AbstractText)
+          message.reply(`Here's what I found on the web`).then(sendSearchResult(response.AbstractText))
         } else if (response.RelatedTopics.length > 0) {
-          return message.reply(response.RelatedTopics[0].Text)
+          message.reply(`Here's what I found on the web`).then(sendSearchResult(response.RelatedTopics[0].Text))
         } else {
           const responseArray = ['Sorry, I can\'t help you with that', 'IDK', 'No idea about that']
-          return message.reply(responseArray[getRandomInt(0, 3)])
+          return message.channel.send(responseArray[getRandomInt(0, 3)])
         }
       })
     } else {
@@ -48,6 +55,20 @@ exports.run = (bot, message) => {
     console.log(error)
   })
   request.end()
+
+  function sendSearchResult (result) {
+    _message = _message.split(' ').join('%20')
+    return message.channel.send({
+      embed: {
+        color: colors.blue,
+        description: `${result}\n\nLink to query:\nhttps://www.duckduckgo.com/?q=${_message}`,
+        footer: {
+          icon_url: 'http://res.cloudinary.com/daemonad/image/upload/v1515169197/ddg-logo_fa1gkj.png',
+          text: 'Powered by DuckDuckGo'
+        }
+      }
+    })
+  }
 }
 
 function getRandomInt (min, max) {

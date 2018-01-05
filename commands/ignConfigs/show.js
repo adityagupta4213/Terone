@@ -44,13 +44,15 @@ exports.run = (bot, message, filepath, [game]) => {
   } else {
     let fields = []
     for (let i in data.ign) {
-      for (let j in data.ign[i].games) {
-        let _games = data.ign[i].games
-        let gameRole = message.guild.roles.find('id', _games[j].gameID)
-        fields.push({
-          name: `${parseInt(j) + parseInt(1)}. ${gameRole.name}`,
-          value: `${_games[j].name}`
-        })
+      if (data.ign[i].id === message.author.id) {
+        for (let j in data.ign[i].games) {
+          let _games = data.ign[i].games
+          let gameRole = message.guild.roles.find('id', _games[j].gameID)
+          fields.push({
+            name: `${parseInt(j) + parseInt(1)}. ${gameRole.name}`,
+            value: `${_games[j].name}`
+          })
+        }
       }
     }
     if (data.ign.length < 1 || fields.length < 1) {
@@ -59,7 +61,7 @@ exports.run = (bot, message, filepath, [game]) => {
     message.channel.send({
       embed: {
         color: colors.blue,
-        description: `Here are your IGNs\n`,
+        description: `Here are your IGNs ${message.author.username}\n`,
         author: {
           name: `IGN`
         },

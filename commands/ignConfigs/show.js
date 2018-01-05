@@ -56,7 +56,7 @@ exports.run = (bot, message, filepath, [game]) => {
         })
       }
     }
-    message.author.send({
+    message.channel.send({
       embed: {
         color: colors.blue,
         description: `Here are your IGNs\n`,

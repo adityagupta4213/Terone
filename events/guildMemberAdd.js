@@ -44,19 +44,23 @@ exports.run = (bot, member) => {
     console.log(count)
     // Determine the superscript for the member count
     let superscript
-    switch (count) {
-    case 1:
-      superscript = 'st'
-      break
-    case 2:
-      superscript = 'nd'
-      break
-    case 3:
-      superscript = 'rd'
-      break
-    default:
+    if (count <= 10) {
+      switch (count) {
+        case 1:
+          superscript = 'st'
+          break
+        case 2:
+          superscript = 'nd'
+          break
+        case 3:
+          superscript = 'rd'
+          break
+        default:
+          superscript = 'th'
+          break
+      }
+    } else {
       superscript = 'th'
-      break
     }
 
     try {
@@ -72,8 +76,7 @@ exports.run = (bot, member) => {
           }
         }
       })
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e)
     }
   }
@@ -85,7 +88,7 @@ exports.run = (bot, member) => {
     }
   }
 
-  function welcomeOfficial(official) {
+  function welcomeOfficial (official) {
     let role
     // Find the staff official's role
     for (let i in staff) {

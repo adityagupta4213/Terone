@@ -62,7 +62,7 @@ bot.on('message', message => {
     } catch (e) {
       console.log('Error', e, 'SERVER', message.guild.name)
     }
-  } else if (!message.guild && message.content.indexOf(prefix) !== -1) {
+  } else if (!message.guild && message.content.startsWith(prefix)) {
     return message.channel.send({
       embed: {
         color: parseInt(colors.yellow),

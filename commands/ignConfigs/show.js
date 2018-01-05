@@ -51,7 +51,7 @@ exports.run = (bot, message, filepath, [game]) => {
         let _games = data.ign[i].games
         let gameRole = message.guild.roles.find('id', _games[j].gameID)
         fields.push({
-          name: `${parseInt(i) + parseInt(1)}. ${gameRole.name}`,
+          name: `${parseInt(j) + parseInt(1)}. ${gameRole.name}`,
           value: `${_games[j].name}`
         })
       }

@@ -44,7 +44,7 @@ exports.run = (bot, message) => {
           message.reply(`Here's what I found on the web`).then(sendSearchResult(response.RelatedTopics[0].Text))
         } else {
           const responseArray = ['Sorry, I can\'t help you with that', 'IDK', 'No idea about that']
-          return message.channel.send(responseArray[getRandomInt(0, 3)])
+          return message.reply(responseArray[getRandomInt(0, 3)])
         }
       })
     } else {

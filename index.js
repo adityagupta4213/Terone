@@ -94,7 +94,7 @@ bot.on('message', message => {
       commandFile.run(bot, message, args)
     } catch (err) {
       console.log(err)
-      message.reply('Command not found. Use the `${prefix}help` command to get my command guide delivered to your inbox')
+      message.reply(`Command not found. Use the \`${prefix}help\` command to get my command guide delivered to your inbox`)
     }
   }
   // Check for profanity

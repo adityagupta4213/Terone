@@ -42,9 +42,6 @@ exports.run = (bot, message, filepath, [game]) => {
       return message.reply(errMsg)
     }
   } else {
-    if (data.ign.length < 1) {
-      return message.reply(`You haven't stored any IGNs.`)
-    }
     let fields = []
     for (let i in data.ign) {
       for (let j in data.ign[i].games) {
@@ -55,6 +52,9 @@ exports.run = (bot, message, filepath, [game]) => {
           value: `${_games[j].name}`
         })
       }
+    }
+    if (data.ign.length < 1 || fields.length < 1) {
+      return message.reply(`You haven't stored any IGNs.`)
     }
     message.channel.send({
       embed: {

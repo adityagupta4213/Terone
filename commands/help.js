@@ -28,13 +28,14 @@ exports.run = (bot, message, helpFor) => {
         },
         fields: fields
       }
-    })
-    message.channel.send({
-      embed: {
-        color: colors.blue,
-        description: `${message.author}, have a look at your inbox.`
-      }
-    })
+    }).then(
+        message.channel.send({
+          embed: {
+            color: colors.blue,
+            description: `${message.author}, have a look at your inbox.`
+          }
+        })
+      ).catch(e => { return message.reply(`Couldn't complete the operation due to ${e}`) })
   }
   if (helpFor) {
     for (let i in help) {

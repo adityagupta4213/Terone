@@ -24,22 +24,33 @@ exports.run = (bot, message, filepath, [game, name]) => {
     id: message.author.id,
     games: [gameObj]
   }
-
   if (data.ign.length > 0) {
-    for (let i in data.ign) {
-      if (data.ign[i].id === message.author.id) {
-        for (let j in data.ign[i].games) {
-          if (data.ign[i].games[j].gameID === game.id) {
-            data.ign[i].games[j] = gameObj
+    let gameFound = true
+    let userFound = true
+    for (let i = 0; i < data.ign.length; i++) {
+      let user = data.ign[i]
+      if (user.id === message.author.id && user.games.length > 0) {
+        userFound = true
+        for (let j = 0; j < user.games.length; j++) {
+          let currentGame = user.games[j]
+          if (currentGame.gameID === game.id) {
+            gameFound = true
+            currentGame.gameID = game.id
+            currentGame['name'] = name
+            break
           } else {
-            data.ign[i].games.push(gameObj)
+            gameFound = false
           }
-          break
+        }
+        if (!gameFound) {
+          user.games.push(gameObj)
         }
       } else {
-        data.ign.push(userObj)
+        userFound = false
       }
-      break
+    }
+    if (!userFound) {
+      data.ign.push(userObj)
     }
   } else {
     data.ign.push(userObj)

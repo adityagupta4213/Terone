@@ -8,35 +8,37 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 
-exports.run = (bot, message, [unit, ...city]) => {
-  if (!city || !unit || unit.length > 1) {
-    return message.channel.send('**Please provide a valid city name along with preferred temperature unit (celsius/fahrenheit) in the syntax: <unit> <city>, <country>**')
+exports.run = (bot, message, [...city]) => {
+  if (!city) {
+    return message.reply('Please provide a valid city name')
   }
-
   city = city.join(' ')
-  // Keep a variable for displaying unit in results
-  const _unit = unit.toUpperCase()
-  // Set unit as metric or imperial
-  unit = unit.toUpperCase() === 'C' ? 'metric' : 'imperial'
 
+  // Just for fun
+  if (city.toLowerCase() === 'devrant') {
+    return message.reply(`Slightly cloudy with a chance of bugs`)
+  } else if (city.toLowerCase() === 'terone') {
+    return message.reply(`Beware! Terone's way too hot!`)
+  }
   const appID = config.appID
-  const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${appID}`
+  const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${appID}`
   let data
 
   try {
     data = justGetJSON(url)
   } catch (e) {
-    message.channel.send(e)
+    return message.reply(`Couldn't find the city. Please check for any mis-spellings.`)
   }
-
+  console.log(data)
   if (!data.name) {
-    return message.reply(`**Enter a valid city name please!**`)
+    return message.reply(`Couldn't find your city. Please check for any mis-spellings.`)
   }
   const cityName = data.name
   const countryCode = data.sys.country
   const temp = data.main.temp
   const condition = data.weather[0].main
   const humidity = data.main.humidity
+  const tempFahrenheit = convertCtoF(temp)
 
   message.channel.send({
     embed: {
@@ -48,7 +50,7 @@ exports.run = (bot, message, [unit, ...city]) => {
       fields: [
         {
           'name': 'Temperature',
-          'value': `${temp}°${_unit}`
+          'value': `${temp}°C\n\n${tempFahrenheit}°F`
         },
         {
           'name': 'Sky',
@@ -61,4 +63,8 @@ exports.run = (bot, message, [unit, ...city]) => {
       ]
     }
   })
+}
+
+function convertCtoF (temp) {
+  return parseInt(temp) * (9 / 5) + 32).toFixed(1)
 }

@@ -27,28 +27,33 @@ exports.run = (bot, message) => {
   }
 
   // Remove the bot mention from the message
-  let _message = message.content.split(' ').slice(1).join(' ')
+  let cleanMessage = message.content.split(' ').slice(1).join(' ')
   // Call the agent
-  let request = app.textRequest(`${_message}`, { sessionId: message.author.id })
+  let request = app.textRequest(`${cleanMessage}`, { sessionId: message.author.id })
   request.on('response', function (response) {
-    // Set response text equal to the output speech
-    let responseText = response.result.fulfillment.speech
-    // If response is not available, return default
-    if (!responseText) {
-      let ddg = new DDG('terone-ddg-search')
-      ddg.instantAnswer(_message, {skip_disambig: '0'}, function (err, response) {
-        if (err) console.log(err)
-        if (response.AbstractText !== '') {
-          message.reply(`Here's what I found on the web`).then(sendSearchResult(response.AbstractText))
-        } else if (response.RelatedTopics.length > 0) {
-          message.reply(`Here's what I found on the web`).then(sendSearchResult(response.RelatedTopics[0].Text))
-        } else {
-          const responseArray = ['Sorry, I can\'t help you with that', 'IDK', 'No idea about that']
-          return message.reply(responseArray[getRandomInt(0, 3)])
-        }
-      })
+    console.log(response)
+    if (response.result.action === 'weather') {
+      callWeatherCommand(bot, message, response)
     } else {
-      return message.reply(`${responseText}`)
+      // Set response text equal to the output speech
+      let responseText = response.result.fulfillment.speech
+    // If response is not available, return default
+      if (!responseText) {
+        let ddg = new DDG('terone-ddg-search')
+        ddg.instantAnswer(cleanMessage, {skip_disambig: '0'}, function (err, searchResult) {
+          if (err) console.log(err)
+          if (searchResult.AbstractText !== '') {
+            message.reply(`Here's what I found on the web`).then(sendSearchResult(searchResult.AbstractText))
+          } else if (searchResult.RelatedTopics.length > 0) {
+            message.reply(`Here's what I found on the web`).then(sendSearchResult(searchResult.RelatedTopics[0].Text))
+          } else {
+            const responseArray = ['Sorry, I can\'t help you with that', 'IDK', 'No idea about that', 'Mate I can\'t know everything!']
+            return message.reply(responseArray[getRandomInt(0, 3)])
+          }
+        })
+      } else {
+        return message.reply(`${responseText}`)
+      }
     }
   })
   request.on('error', function (error) {
@@ -57,11 +62,11 @@ exports.run = (bot, message) => {
   request.end()
 
   function sendSearchResult (result) {
-    _message = _message.split(' ').join('%20')
+    cleanMessage = cleanMessage.split(' ').join('%20')
     return message.channel.send({
       embed: {
         color: colors.blue,
-        description: `${result}\n\nLink to query:\nhttps://www.duckduckgo.com/?q=${_message}`,
+        description: `${result}\n\nLink to query:\nhttps://www.duckduckgo.com/?q=${cleanMessage}`,
         footer: {
           icon_url: 'http://res.cloudinary.com/daemonad/image/upload/v1515169197/ddg-logo_fa1gkj.png',
           text: 'Powered by DuckDuckGo'
@@ -75,4 +80,14 @@ function getRandomInt (min, max) {
   min = Math.ceil(min)
   max = Math.floor(max)
   return Math.floor(Math.random() * (max - min)) + min // The maximum is exclusive and the minimum is inclusive
+}
+
+function callWeatherCommand (bot, message, response) {
+  let weather = require('./weather.js')
+  let targetCity = response.result.parameters.location.city
+  if (!targetCity) {
+    return message.reply(`Couldn't find your city. Please check for any mis-spellings.`)
+  }
+  console.log(targetCity)
+  weather.run(bot, message, targetCity)
 }

@@ -9,6 +9,9 @@ Object.keys(_colors).forEach(function (key) {
 })
 
 exports.run = (bot, message) => {
+  if (!message.member.hasPermission(['ADMINISTRATOR'])) {
+    return message.reply('Only the administrators can request support from officials')
+  }
   for (let i in staff) {
     bot.fetchUser(staff[i].userID).then((user) => {
       // Send support request
@@ -19,16 +22,13 @@ exports.run = (bot, message) => {
           author: {
             name: `SUPPORT REQUEST CANCELLED`
           },
-          fields: [
-            {
-              'name': 'Name',
-              'value': `${message.author}`
-            },
-            {
-              'name': 'Server',
-              'value': `${message.guild.name}`
-            }
-          ]
+          fields: [{
+            'name': 'Name',
+            'value': `${message.author}`
+          }, {
+            'name': 'Server',
+            'value': `${message.guild.name}`
+          }]
         }
       })
     })

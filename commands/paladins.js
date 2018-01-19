@@ -20,9 +20,9 @@ exports.run = (bot, message, ign) => {
   }
 
   if (!generatedSession) {
-    let session
-    hirez.paladins('pc').session.generate().then(_session => {
-      session = _session
+    let tempSession
+    hirez.paladins('pc').session.generate().then(session => {
+      tempSession = session
     }).catch(e => {
       console.log(e)
       message.reply(e)
@@ -34,10 +34,10 @@ exports.run = (bot, message, ign) => {
     }, 15 * 60 * 1000)
   }
 
-  fetchAndSend(bot, message, ign)
+  getData(bot, message, ign)
 }
 
-function fetchAndSend (bot, message, ign) {
+function getData (bot, message, ign) {
   hirez.paladins('pc').getPlayer(ign).then(player => {
     hirez.paladins('pc').getPlayerStatus(ign).then(playerStatus => {
       hirez.paladins('pc').getChampionRanks(ign).then(championRanks => {

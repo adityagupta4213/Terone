@@ -7,7 +7,7 @@ Object.keys(_colors).forEach(function (key) {
   colors[key] = parseInt(value)
 })
 
-exports.run = (bot, message, args) => {
+exports.run = (bot, message, [member]) => {
   const user = message.mentions.users.first()
   if (!user) return message.reply('Mention a valid user to get the avatar from')
   if (!user.avatarURL) user.avatarURL = user.defaultAvatarURL

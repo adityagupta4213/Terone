@@ -21,31 +21,37 @@ exports.run = (bot, message, [...topic]) => {
     message.channel.send(e)
   }
 
-  for (let i = 0; i < 3; i++) {
-    message.channel.send({
-      embed: {
-        color: colors.blue,
-        description: `${data.articles[i].title}`,
-        author: {
-          name: `${data.articles[i].source.name}`
-        },
-        fields: [{
-          'name': 'Author',
-          'value': `${data.articles[i].author}`
-        }, {
-          'name': 'Excerpt',
-          'value': `${data.articles[i].description}`
-        }, {
-          'name': 'URL',
-          'value': `${data.articles[i].url}`
-        }],
-        image: {
-          url: `${data.articles[i].urlToImage}`
-        },
-        footer: {
-          text: `Published: ${data.articles[i].publishedAt}`
+  try {
+    for (let i = 0; i < 3; i++) {
+      message.channel.send({
+        embed: {
+          color: colors.blue,
+          description: `${data.articles[i].title}`,
+          author: {
+            name: `${data.articles[i].source.name}`
+          },
+          fields: [{
+            'name': 'Author',
+            'value': `${data.articles[i].author}`
+          }, {
+            'name': 'Excerpt',
+            'value': `${data.articles[i].description}`
+          }, {
+            'name': 'URL',
+            'value': `${data.articles[i].url}`
+          }],
+          image: {
+            url: `${data.articles[i].urlToImage}`
+          },
+          footer: {
+            text: `Published: ${data.articles[i].publishedAt}`
+          }
         }
-      }
-    })
+      })
+    }
   }
+  catch (e) {
+    console.log(e)
+  }
+
 }

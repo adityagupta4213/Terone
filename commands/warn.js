@@ -7,6 +7,9 @@ Object.keys(_colors).forEach(function (key) {
 })
 
 exports.run = (bot, message, [mention, ...reason]) => {
+  if (!message.member.hasPermission(['KICK_MEMBERS'])) {
+    return message.reply(`You don't have the permissions for warning members. You need to be able to kick members.`)
+  }
   let member = message.mentions.members.first()
 
   if (!member) {
@@ -17,7 +20,8 @@ exports.run = (bot, message, [mention, ...reason]) => {
   }
   if (!reason) {
     return message.channel.send(`${message.author}, please provide a reason for the warning`)
-  } else {
+  }
+  else {
     reason = reason.join(' ')
   }
 
@@ -41,20 +45,16 @@ exports.run = (bot, message, [mention, ...reason]) => {
       author: {
         iconURL: message.author.avatarURL
       },
-      fields: [
-        {
-          'name': 'Warning',
-          'value': `You've been warned!`
-        },
-        {
-          'name': 'Server',
-          'value': `${message.guild.name}`
-        },
-        {
-          'name': 'Reason',
-          'value': `${reason}`
-        }
-      ]
+      fields: [{
+        'name': 'Warning',
+        'value': `You've been warned!`
+      }, {
+        'name': 'Server',
+        'value': `${message.guild.name}`
+      }, {
+        'name': 'Reason',
+        'value': `${reason}`
+      }]
     }
   })
 }

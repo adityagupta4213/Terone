@@ -17,6 +17,7 @@
     "hirez.js": "^2.0.0",
     "iso-language-converter": "^1.1.0",
     "just-get-json": "^0.1.3",
+    "node-ddg-api": "^0.1.4",
     "opusscript": "0.0.4",
     "youtube-audio-stream": "0.0.50",
     "youtube-search": "^1.0.10"
